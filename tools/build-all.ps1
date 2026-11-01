@@ -1,15 +1,17 @@
-# Builds both mods and gathers the built files in dist\~mods at the repository root.
+# Builds both mods and gathers the built files in dist\ProjectPBZ\Content\Paks\~mods at the
+# repository root, so the contents of dist\ can be copied straight into the game's root folder.
 # Usage (from anywhere): powershell -ExecutionPolicy Bypass -File tools\build-all.ps1
 #
 # 1. ScriptModLoader\build.ps1   (syntax check, tests, pak, byte-for-byte check) -> ScriptModLoader\dist
 # 2. EarnedProgression\build.ps1 (same; needs the loader built first)             -> EarnedProgression\dist
-# 3. Copies every file of both mod dist folders into dist\~mods and checks the copies by hash.
-#    dist\~mods\ScriptModLoader.json (the registry) is created if missing and never overwritten.
-# Stops at the first failure and leaves dist\~mods untouched in that case.
+# 3. Copies every file of both mod dist folders into dist\ProjectPBZ\Content\Paks\~mods and checks
+#    the copies by hash. ScriptModLoader.json (the registry) there is created if missing and never
+#    overwritten.
+# Stops at the first failure and leaves the output folder untouched in that case.
 $ErrorActionPreference = 'Stop'
 
 $root   = Split-Path $PSScriptRoot -Parent
-$outDir = Join-Path $root 'dist\~mods'
+$outDir = Join-Path $root 'dist\ProjectPBZ\Content\Paks\~mods'
 $mods   = @('ScriptModLoader', 'EarnedProgression')
 
 function Fail($message) { Write-Host "BUILD-ALL FAILED: $message" -ForegroundColor Red; exit 1 }
@@ -24,7 +26,7 @@ foreach ($mod in $mods) {
     if ($LASTEXITCODE -ne 0) { Fail "$mod did not build (see the lines above)" }
 }
 
-# 3: dist\~mods at the root
+# 3: the output folder at the root
 Step "updating $outDir"
 New-Item -ItemType Directory -Force $outDir | Out-Null
 

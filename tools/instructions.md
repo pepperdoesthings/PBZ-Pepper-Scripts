@@ -195,7 +195,7 @@ The plugin pak holds only new files (`Mods/EarnedProgression.js` and `Mods/Earne
 
 ## tools/build-all.ps1
 
-Builds both mods and gathers the built files in `dist\~mods` at the repository root, in one command. Needs the tools listed in "What the build needs" at the top. From anywhere:
+Builds both mods and gathers the built files in `dist\ProjectPBZ\Content\Paks\~mods` at the repository root, in one command. Needs the tools listed in "What the build needs" at the top. From anywhere:
 
 ```
 powershell -ExecutionPolicy Bypass -File tools\build-all.ps1
@@ -204,8 +204,8 @@ powershell -ExecutionPolicy Bypass -File tools\build-all.ps1
 Steps, in order, stopping at the first failure:
 1. Runs `ScriptModLoader\build.ps1` (syntax check, tests, pak, byte-for-byte check) and updates `ScriptModLoader\dist`.
 2. Runs `EarnedProgression\build.ps1` the same way and updates `EarnedProgression\dist`. That build also writes `EarnedProgression.json`, the default settings, next to the pak. It is made by calling the mod's own `defaultsText()` in `Settings.js`, so it is the same text the mod writes when the file is missing, and checks that it is valid JSON. The loader goes first because the plugin's build checks the loader's version and its tests run the loader's code.
-3. Copies every file of both mods' own `dist` folders into the root `dist\~mods` (including `EarnedProgression.json`) and compares each copy with its source by hash.
+3. Copies every file of both mods' own `dist` folders into the root `dist\ProjectPBZ\Content\Paks\~mods` (including `EarnedProgression.json`) and compares each copy with its source by hash.
 
-`dist\~mods\ScriptModLoader.json` (the registry) is created with the `EarnedProgression` entry if it is missing, and is never overwritten, so a registry you edited stays as it is. `EarnedProgression.json` is rebuilt on every run, so a change to the defaults in `Settings.js` shows up in `dist\~mods` after the next build. Copying `dist\~mods` over a game folder replaces the player's own `EarnedProgression.json`, so skip that file when updating. If a build or test fails, `dist\~mods` is not touched. Prints `BUILD-ALL OK` and exits 0, or `BUILD-ALL FAILED: <reason>` and exits 1. It never writes to the game folder: copy `dist\~mods\*` there yourself.
+`dist\ProjectPBZ\Content\Paks\~mods\ScriptModLoader.json` (the registry) is created with the `EarnedProgression` entry if it is missing, and is never overwritten, so a registry you edited stays as it is. `EarnedProgression.json` is rebuilt on every run, so a change to the defaults in `Settings.js` shows up in `dist\ProjectPBZ\Content\Paks\~mods` after the next build. Copying `dist\ProjectPBZ\Content\Paks\~mods` over a game folder replaces the player's own `EarnedProgression.json`, so skip that file when updating. If a build or test fails, `dist\ProjectPBZ\Content\Paks\~mods` is not touched. Prints `BUILD-ALL OK` and exits 0, or `BUILD-ALL FAILED: <reason>` and exits 1. It never writes to the game folder: copy `dist\ProjectPBZ\Content\Paks\~mods\*` there yourself.
 
 Checked by breaking a plugin test, by breaking a loader test (the plugin build did not start), by deleting the registry (recreated) and by editing it (kept).

@@ -11,12 +11,12 @@ The game's own logic is JavaScript running in its script engine (PuerTS). These 
 | `ScriptModLoader/` | A loader that lets several script mods run side by side. It replaces one game script with a small stub that starts the loader, which then starts every mod listed in `ScriptModLoader.json`. Mods get a small API (`log`, `wrap`, settings files). Full API: [ScriptModLoader/README.md](ScriptModLoader/README.md). |
 | `EarnedProgression/` | A mod (plugin for the loader). Enemies you kill only stay dead once you rest at a new bell. Die before that and they come back. Bosses are left alone. Rules and settings: [EarnedProgression/README.md](EarnedProgression/README.md). |
 | `tools/` | Build helpers: `get-tools.bat` (downloads repak and retoc), `build-all.ps1` (builds everything). Details: [tools/instructions.md](tools/instructions.md). |
-| `dist/~mods/` | Created by `build-all.ps1`: the built files, ready to copy into the game. Not in the repository, so build first. |
+| `dist/` | Created by `build-all.ps1`: the built files, laid out as `ProjectPBZ/Content/Paks/~mods/` so the folder's contents can be copied into the game's root folder. Not in the repository, so build first. |
 
 ## Install
 
 1. Back up your save.
-2. Copy everything in `dist\~mods\` into `<game folder>\ProjectPBZ\Content\Paks\~mods\` (create `~mods` if it does not exist). The Steam default game folder is `C:\Program Files (x86)\Steam\steamapps\common\PBZ`. When updating, skip `EarnedProgression.json` and `ScriptModLoader.json` if you have changed them: copying over them replaces your settings and mod list.
+2. Copy the contents of `dist\` (the `ProjectPBZ` folder inside it) into the game's root folder, so the files end up in `<game folder>\ProjectPBZ\Content\Paks\~mods\`. When updating, skip `EarnedProgression.json` and `ScriptModLoader.json` if you have changed them: copying over them replaces your settings and mod list.
 3. Remove any other mod that replaces `UI/Widget/Foundation/WeaponNormalTextEntry.js`. Only one mod can replace a file, and the loader needs this one.
 4. Start the game. Look for `ScriptModLoader.log` in the same `~mods` folder. It lists what loaded and what failed. If the file never appears, the loader did not start.
 
@@ -38,14 +38,14 @@ Then, from the repository root:
 powershell -ExecutionPolicy Bypass -File tools\build-all.ps1
 ```
 
-This builds `ScriptModLoader` first and then `EarnedProgression`. For each it checks the scripts for syntax errors, packs them (pak format version 11, as the game's mod folder expects), writes the two small container stubs the game wants next to every pak (`.utoc` and `.ucas`), and then unpacks its own pak to confirm every file matches the source byte for byte. The results land in each mod's own `dist\` folder, and `build-all.ps1` gathers them in `dist\~mods\` at the repository root. It stops at the first failure and prints `BUILD-ALL FAILED: <reason>`. It never writes into the game folder: copy `dist\~mods\*` yourself.
+This builds `ScriptModLoader` first and then `EarnedProgression`. For each it checks the scripts for syntax errors, packs them (pak format version 11, as the game's mod folder expects), writes the two small container stubs the game wants next to every pak (`.utoc` and `.ucas`), and then unpacks its own pak to confirm every file matches the source byte for byte. The results land in each mod's own `dist\` folder, and `build-all.ps1` gathers them in `dist\ProjectPBZ\Content\Paks\~mods\` at the repository root. It stops at the first failure and prints `BUILD-ALL FAILED: <reason>`. It never writes into the game folder: copy `dist\ProjectPBZ\Content\Paks\~mods\*` yourself.
 
-`dist\~mods\ScriptModLoader.json` (the list of mods to start) is created if missing and never overwritten. To build one mod alone, run its own script, for example `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`.
+`dist\ProjectPBZ\Content\Paks\~mods\ScriptModLoader.json` (the list of mods to start) is created if missing and never overwritten. To build one mod alone, run its own script, for example `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`.
 
 ## Edit the scripts
 
 - The source of each mod is under `<Mod>\src\ProjectPBZ\Content\JavaScript\...`. The pak copies that path exactly, so a file's place in the pak is its place in the game's content folder.
-- Edit, run `tools\build-all.ps1`, copy `dist\~mods\*` to the game, and restart the game. Scripts are read when the game starts.
+- Edit, run `tools\build-all.ps1`, copy `dist\ProjectPBZ\Content\Paks\~mods\*` to the game, and restart the game. Scripts are read when the game starts.
 - `EarnedProgression` keeps its rules in `Settings.js`, `Progress.js`, `DustCut.js` and `BossNames.js`, which never touch game objects. Everything that calls into the game is in `Game.js`, `Spawners.js` and `Kills.js`. Start there when something game-related needs changing.
 - Settings need no rebuild. `EarnedProgression.json` in `~mods` is re-read about every 2 seconds. The mod writes it with the default values on first start, and only when it is missing, so delete it to pick up new defaults. The defaults are at the top of `Settings.js`.
 - Use `api.log("...")` to write to `ScriptModLoader.log`. `EarnedProgression` also has a `debugLog` setting, on by default, that adds a line per kill.
@@ -66,7 +66,7 @@ This builds `ScriptModLoader` first and then `EarnedProgression`. For each it ch
    To get a game class, require it from the game's script folder. `EarnedProgression.js` does `require("../../Gameplay/RenewalPlayer")`, and also uses `require("ue")` and `require("puerts")` for the engine's own modules. The full `api` list and the exact `wrap` rules are in [ScriptModLoader/README.md](ScriptModLoader/README.md).
 3. Add a build script: copy `EarnedProgression\build.ps1` to `MyMod\build.ps1` and change `$name` to `zzz_PBZ_SMLMyMod_P`. Keep the same naming pattern as the other packs.
 4. Add `'MyMod'` to the `$mods` list near the top of `tools\build-all.ps1`, after `'ScriptModLoader'`.
-5. Register it in `ScriptModLoader.json` in the game's `~mods` folder (and in `dist\~mods\ScriptModLoader.json` if you share that file):
+5. Register it in `ScriptModLoader.json` in the game's `~mods` folder (and in `dist\ProjectPBZ\Content\Paks\~mods\ScriptModLoader.json` if you share that file):
 
    ```json
    { "mods": [
@@ -74,7 +74,7 @@ This builds `ScriptModLoader` first and then `EarnedProgression`. For each it ch
        { "id": "MyMod", "enabled": true }
    ] }
    ```
-6. Build, copy `dist\~mods\*` to the game, start it, and read `ScriptModLoader.log`. You should see `MyMod: loaded`. A mod that throws is logged as `failed` and the others still load.
+6. Build, copy `dist\ProjectPBZ\Content\Paks\~mods\*` to the game, start it, and read `ScriptModLoader.log`. You should see `MyMod: loaded`. A mod that throws is logged as `failed` and the others still load.
 
 ## When the game updates - DEVELOPER GUIDE
 
