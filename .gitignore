@@ -6,6 +6,6 @@ tools/bin
 extracted
 ScriptModLoader/tests
 ScriptModLoader/dist
-install
+/dist
 EarnedProgression/dist
 /AGENTS.md
