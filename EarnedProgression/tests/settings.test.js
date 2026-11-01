@@ -2,7 +2,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { lib } = require("./paths");
-const { DEFAULTS, RELOAD_MS, normalize, createSettings } = lib("Settings");
+const { DEFAULTS, RELOAD_MS, normalize, createSettings, defaultsText } = lib("Settings");
 
 const PATH = "C:/Game/ProjectPBZ/Content/Paks/~mods/EarnedProgression.json";
 const BROKEN_BELL = "BP_BrokenBell_C_UAID_E89C25A7512053C502_1432849353";
@@ -34,9 +34,9 @@ function warnings(raw) {
     return { value, warned };
 }
 
-test("the defaults are 1000 cm, 25 percent and no debug log, and cannot be changed", () => {
+test("the defaults are 1000 cm, 25 percent and the debug log on, and cannot be changed", () => {
     assert.deepEqual({ ...DEFAULTS }, {
-        bellSafeRadius: 1000, respawnDust: 25, debugLog: false, bellProximityFallback: false,
+        bellSafeRadius: 1000, respawnDust: 25, debugLog: true, bellProximityFallback: false,
         bellExceptions: DEFAULT_BELLS, enemyExceptions: DEFAULT_ENEMIES,
     });
     assert.equal(Object.isFrozen(DEFAULTS), true);
@@ -103,8 +103,8 @@ test("normalized lists are copies, so changing them cannot change the defaults",
 });
 
 test("normalize keeps valid values", () => {
-    const { value, warned } = warnings({ bellSafeRadius: 500, respawnDust: 40, debugLog: true });
-    assert.deepEqual(value, { bellSafeRadius: 500, respawnDust: 40, debugLog: true, bellProximityFallback: false, bellExceptions: DEFAULT_BELLS, enemyExceptions: DEFAULT_ENEMIES });
+    const { value, warned } = warnings({ bellSafeRadius: 500, respawnDust: 40, debugLog: false });
+    assert.deepEqual(value, { bellSafeRadius: 500, respawnDust: 40, debugLog: false, bellProximityFallback: false, bellExceptions: DEFAULT_BELLS, enemyExceptions: DEFAULT_ENEMIES });
     assert.deepEqual(warned, []);
 });
 
@@ -150,8 +150,8 @@ test("unusable values fall back to the default and warn with the key name", () =
     }
     for (const bad of ["true", 1, null]) {
         const { value, warned } = warnings({ debugLog: bad });
-        assert.equal(value.debugLog, false);
-        assert.match(warned[0], /debugLog/);
+        assert.equal(value.debugLog, true);
+        assert.match(warned[0], /debugLog must be true or false, using true/);
     }
 });
 
@@ -161,6 +161,19 @@ test("input that is not a JSON object gives the defaults and a warning", () => {
         assert.deepEqual(value, { ...DEFAULTS });
         assert.equal(warned.length, 1);
     }
+});
+
+test("defaultsText is the defaults as JSON, and is what a missing file is created with", () => {
+    const text = defaultsText();
+    assert.equal(text.endsWith("\n"), true);
+    assert.equal(text.charCodeAt(0), 0x7b);
+    assert.deepEqual(JSON.parse(text), JSON.parse(JSON.stringify(DEFAULTS)));
+    const { files } = setup();
+    const created = createSettings({
+        path: PATH, readText: () => undefined, writeText: (p, t) => files.set(p, t), clock: () => 0, log: () => { },
+    });
+    created.get();
+    assert.equal(files.get(PATH), text);
 });
 
 test("a missing file is created with the defaults and logged once", () => {
@@ -189,7 +202,7 @@ test("a failure to write the defaults is logged and does not throw", () => {
 
 test("an existing file is read, including after a byte order mark", () => {
     const { settings } = setup("\ufeff" + '{"respawnDust": 60, "bellSafeRadius": 250}');
-    assert.deepEqual({ ...settings.get() }, { bellSafeRadius: 250, respawnDust: 60, debugLog: false, bellProximityFallback: false, bellExceptions: DEFAULT_BELLS, enemyExceptions: DEFAULT_ENEMIES });
+    assert.deepEqual({ ...settings.get() }, { bellSafeRadius: 250, respawnDust: 60, debugLog: true, bellProximityFallback: false, bellExceptions: DEFAULT_BELLS, enemyExceptions: DEFAULT_ENEMIES });
 });
 
 test("the file is read at most once per reload interval and changes are picked up after it", () => {

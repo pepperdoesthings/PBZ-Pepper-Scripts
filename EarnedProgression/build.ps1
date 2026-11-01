@@ -58,6 +58,13 @@ Step 'IoStore stubs (.utoc/.ucas)'
 & $retoc to-zen --version UE5_7 $pak $utoc | Out-Null
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $utoc) -or -not (Test-Path $ucas)) { Fail 'retoc to-zen failed' }
 
+Step 'default settings file (EarnedProgression.json, the same text the mod writes on first start)'
+$settingsJs = Join-Path $src 'ProjectPBZ\Content\JavaScript\ScriptModLoader\Mods\EarnedProgressionLib\Settings.js'
+$settingsOut = Join-Path $dist 'EarnedProgression.json'
+node -e "require('fs').writeFileSync(process.argv[2], require(process.argv[1]).defaultsText())" $settingsJs $settingsOut
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path $settingsOut)) { Fail 'could not write the default settings file' }
+try { $null = Get-Content $settingsOut -Raw | ConvertFrom-Json } catch { Fail 'the default settings file is not valid JSON' }
+
 Step 'verify pak contents against src (byte for byte)'
 $check = Join-Path $env:TEMP "ep-verify-$PID"
 if (Test-Path $check) { Remove-Item $check -Recurse -Force }

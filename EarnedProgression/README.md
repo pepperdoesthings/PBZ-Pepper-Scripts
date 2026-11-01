@@ -20,6 +20,20 @@ Back up your save before the first run. The mod stores its progress in the save 
 - Bosses, minibosses and the enemies in a boss's arena are never touched. The base game handles them.
 - Quitting and reloading does not bring pending enemies back. Only a death does.
 
+## Known issues
+
+**Wave challenges, such as the "Human-Faced Banyan Trees", are effectively broken for now.** Some fights are made of groups of enemies that the game releases in stages, one wave after the next. The mod cannot tell those enemies from ordinary ones. They are normal spawners to it, so it records each kill as pending like any other.
+
+If you die partway through such a fight, the mod brings every pending enemy back at once, including the ones from earlier waves. The game does not bring them back in stages, so you respawn into the whole fight at the same time, which can put you in serious trouble.
+
+The way around this is the two exception lists:
+- `bellExceptions`: if the bell you respawn at is on this list, nothing comes back on that death.
+- `enemyExceptions`: spawners on this list are never recorded, so they never come back.
+
+A challenge only works properly once its respawn bell, or its enemies' spawner ids, are on those lists. Those ids have not been found for most wave challenges yet, so until they are, expect them to misbehave. The Human-Faced Banyan Trees are a known case.
+
+**Helping fix it.** The log is on by default. If you die in a wave challenge, open `ScriptModLoader.log` right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. You can also put them in your own `EarnedProgression.json` (see "Settings") to fix it on your machine.
+
 ## Install
 1. Install **ScriptModLoader 1.1.0 or newer** first (see its README). Remove any other mod that replaces `WeaponNormalTextEntry.js`, such as Phantom Souls or Movement Speed. It does not work together with Phantom Souls, which has its own respawn rules.
 2. Build this pack: `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`. The files appear in `EarnedProgression\dist\`.
@@ -34,7 +48,7 @@ Back up your save before the first run. The mod stores its progress in the save 
 }
 ```
 
-5. Start the game. The mod writes `EarnedProgression.json` next to the paks if it is missing.
+5. Start the game. `EarnedProgression.json` (the default settings) is built into `dist\` next to the paks, and the mod also writes the same file itself if it is missing. Copying it over an existing one replaces your own settings.
 
 ## Settings
 `ProjectPBZ/Content/Paks/~mods/EarnedProgression.json`, re-read about every 2 seconds:
@@ -43,14 +57,14 @@ Back up your save before the first run. The mod stores its progress in the save 
 |---|---|---|
 | `bellSafeRadius` | `1000` | Centimetres (1000 = 10 m). Pending kills this close to the respawn bell are not brought back. `0` turns the safe zone off. |
 | `respawnDust` | `25` | Percent of its Dust that an enemy gives when it is killed again after coming back. 0 to 100. `100` means full Dust. |
-| `debugLog` | `false` | `true` adds a log line for each kill and Dust cut. |
+| `debugLog` | `true` | `true` adds a log line for each kill and Dust cut. On by default so that the ids needed for the exception lists are always in the log. Set `false` for a quieter log. |
 | `bellProximityFallback` | `false` | `true` uses the bell actor nearest to the respawn point when the game has no respawn bell set. Off by default because it can pick the wrong actor. |
 | `bellExceptions` | the list `bellExceptionIds` in `Settings.js` | Bell ids. A death that respawns you at one of these brings nothing back and makes pending kills permanent. An id is the game's BellID (logged as `respawn bell <id>`), the bell's actor name, or `<level>\|<actor name>`. Case does not matter. Writing your own list replaces the default one. |
 | `enemyExceptions` | 12 spawner ids found safe in play (the list `enemyExceptionIds` in `Settings.js`) | Spawner ids (the name printed after `kill:` in the log). These enemies are never recorded as kills. Writing your own list replaces the default one. |
 
 A value that cannot be used falls back to its default and is logged once. Entries in the two lists are trimmed, blanks are dropped and repeats are ignored.
 
-**Finding ids.** Every death logs `death: respawn bell <BellID> (actor <actor name>)`, and every rest ends with `; bell id <BellID>`. Either id works in `bellExceptions`; the BellID is the one the game itself uses. Turn `debugLog` on to see `kill: <spawner>` lines; that name is the id for `enemyExceptions`. The file is re-read about every 2 seconds, so you can add ids while the game runs.
+**Finding ids.** Every death logs `death: respawn bell <BellID> (actor <actor name>)`, and every rest ends with `; bell id <BellID>`. Either id works in `bellExceptions`; the BellID is the one the game itself uses. With `debugLog` on (the default) every kill logs a `kill: <spawner>` line; that name is the id for `enemyExceptions`. The file is re-read about every 2 seconds, so you can add ids while the game runs.
 
 **How the death bell is found.** The mod does not use the last bell you rested at, because the game can change your current bell without a rest. At each death it asks the game which bell it will respawn you at, with the same two calls the game's own death code makes (`PBZGameSystem.GetSaveActorID`, then `GetSaveActorByID` for the actor). If the game has no bell set (it reports `None`, for example after a map teleport or a story respawn point), the log says `could not tell which bell you respawn at (the game has no respawn bell set)` and the death revives as normal, unless `bellProximityFallback` is on.
 
@@ -66,8 +80,8 @@ Look in `ScriptModLoader.log` (same folder). Every line from this mod starts wit
 | A death at an excepted bell | `death: respawning at an excepted bell (<name>), N kill(s) made permanent` |
 | A death where the bell is not found | `death: could not tell which bell you respawn at (<reason>), reviving as normal` |
 | A rest | `rest at <level>\|<bell>: new bell, N kill(s) made permanent` or `known bell, nothing changes` |
-| Kills (set `debugLog` true) | `kill: <spawner> ...` for each enemy you kill |
-| The Dust cut (`debugLog` true) | `dust: <spawner> gave N, M taken back` |
+| Kills (`debugLog` true, the default) | `kill: <spawner> ...` for each enemy you kill |
+| The Dust cut (`debugLog` true, the default) | `dust: <spawner> gave N, M taken back` |
 
 Things only the game can confirm:
 - A bell keeps the same name after you restart the game (so "known bell" survives restarts).

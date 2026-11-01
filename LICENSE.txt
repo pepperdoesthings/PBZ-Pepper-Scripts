@@ -28,6 +28,6 @@ licences, which are included in their downloads.
 References
 ---------
 For the creation of this mod, PBZ Phantom Souls by PVLW (https://www.nexusmods.com/phantombladezero/mods/36) was used as a
-reference to understand how the game can be modded. None of its files are included in this project, but thanks is nonetheless extended to the developer.
+reference to understand how the game can be modded and specific parts of the Earned Progression mod - particularly the respawn dust percentage and safe radius for bells - were heavily inspired by their work. None of its files are included in this project, but thanks is nonetheless extended to the developer.
 
 Provided "as is", without warranty of any kind. Use at your own risk; back up your saves.

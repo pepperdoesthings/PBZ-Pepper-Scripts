@@ -68,7 +68,7 @@ function rest(h, bellName) {
 test("starting writes the default settings file and logs that it started", () => {
     const h = boot();
     assert.deepEqual(JSON.parse(h.files.get(SETTINGS)), {
-        bellSafeRadius: 1000, respawnDust: 25, debugLog: false, bellProximityFallback: false,
+        bellSafeRadius: 1000, respawnDust: 25, debugLog: true, bellProximityFallback: false,
         bellExceptions: [...require("./paths").lib("Settings").DEFAULTS.bellExceptions],
         enemyExceptions: SAFE_ENEMIES,
     });

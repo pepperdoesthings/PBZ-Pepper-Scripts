@@ -31,7 +31,7 @@ const enemyExceptionIds = [
 const DEFAULTS = Object.freeze({
     bellSafeRadius: 1000,
     respawnDust: 25,
-    debugLog: false,
+    debugLog: true,
     bellProximityFallback: false,
     bellExceptions: Object.freeze([...bellExceptionIds]),
     enemyExceptions: Object.freeze([...enemyExceptionIds]),
@@ -102,7 +102,7 @@ function normalize(raw, warn) {
         if (typeof raw.debugLog === "boolean")
             out.debugLog = raw.debugLog;
         else
-            warn("debugLog must be true or false, using false");
+            warn("debugLog must be true or false, using " + DEFAULTS.debugLog);
     }
     if ("bellProximityFallback" in raw) {
         if (typeof raw.bellProximityFallback === "boolean")
@@ -187,3 +187,4 @@ exports.DEFAULTS = DEFAULTS;
 exports.RELOAD_MS = RELOAD_MS;
 exports.normalize = normalize;
 exports.createSettings = createSettings;
+exports.defaultsText = defaultsText;

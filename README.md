@@ -16,9 +16,14 @@ The game's own logic is JavaScript running in its script engine (PuerTS). These 
 ## Install
 
 1. Back up your save.
-2. Copy everything in `install\~mods\` into `<game folder>\ProjectPBZ\Content\Paks\~mods\` (create `~mods` if it does not exist). The Steam default game folder is `C:\Program Files (x86)\Steam\steamapps\common\PBZ`.
+2. Copy everything in `install\~mods\` into `<game folder>\ProjectPBZ\Content\Paks\~mods\` (create `~mods` if it does not exist). The Steam default game folder is `C:\Program Files (x86)\Steam\steamapps\common\PBZ`. When updating, skip `EarnedProgression.json` and `ScriptModLoader.json` if you have changed them: copying over them replaces your settings and mod list.
 3. Remove any other mod that replaces `UI/Widget/Foundation/WeaponNormalTextEntry.js`. Only one mod can replace a file, and the loader needs this one.
 4. Start the game. Look for `ScriptModLoader.log` in the same `~mods` folder. It lists what loaded and what failed. If the file never appears, the loader did not start.
+
+## Known issues
+
+- **Wave challenges may be broken.** Fights made of waves of enemies that the game releases in stages can misbehave with Earned Progression, because the mod can bring the earlier waves back all at once when you die. The "Human-Faced Banyan Trees" are a known case. The reason and the workaround are in [EarnedProgression/README.md](EarnedProgression/README.md#known-issues).
+- **Logs help.** If you hit this, the author appreciates the log from just after the death. Open `ScriptModLoader.log` in the `~mods` folder right after you die and send the last lines. Earned Progression's detailed logging is on by default for this reason.
 
 ## Run the build scripts
 
@@ -43,7 +48,7 @@ This builds `ScriptModLoader` first and then `EarnedProgression`. For each it ch
 - Edit, run `tools\build-all.ps1`, copy `install\~mods\*` to the game, and restart the game. Scripts are read when the game starts.
 - `EarnedProgression` keeps its rules in `Settings.js`, `Progress.js`, `DustCut.js` and `BossNames.js`, which never touch game objects. Everything that calls into the game is in `Game.js`, `Spawners.js` and `Kills.js`. Start there when something game-related needs changing.
 - Settings need no rebuild. `EarnedProgression.json` in `~mods` is re-read about every 2 seconds. The mod writes it with the default values on first start, and only when it is missing, so delete it to pick up new defaults. The defaults are at the top of `Settings.js`.
-- Use `api.log("...")` to write to `ScriptModLoader.log`. `EarnedProgression` also has a `debugLog` setting that adds a line per kill.
+- Use `api.log("...")` to write to `ScriptModLoader.log`. `EarnedProgression` also has a `debugLog` setting, on by default, that adds a line per kill.
 
 ## Hook a new mod into the loader
 
@@ -93,6 +98,12 @@ The scripts belong to S-GAME. Keep them outside this repository. Open the file n
 The build scripts pass `--version UE5_7` to retoc when writing the container stubs. The stubs hold no assets, so a new engine version probably does not matter, but if a future update moves to a newer Unreal Engine and the paks stop loading, try changing it in each `build.ps1`.
 
 When everything works again, write your build number in `TESTED_BUILD.txt`.
+
+## Acknowledgements
+
+- **PBZ Phantom Souls by PVLW** ([Nexus Mods](https://www.nexusmods.com/phantombladezero/mods/36)) was used as a reference to understand how the game can be modded. Parts of Earned Progression, particularly the respawn Dust percentage and the safe radius around bells, were heavily inspired by it. None of its files are included in this project. Thanks to PVLW.
+- **repak and retoc by trumank** ([repak](https://github.com/trumank/repak), [retoc](https://github.com/trumank/retoc)) are the tools that pack the mods. They are downloaded by `tools\get-tools.bat`, are not part of this project, and keep their own licences.
+- **Phantom Blade Zero** belongs to S-GAME. These are unofficial fan-made mods with no affiliation to S-GAME.
 
 ## Licence
 
