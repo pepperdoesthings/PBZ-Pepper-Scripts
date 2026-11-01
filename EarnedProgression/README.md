@@ -5,7 +5,7 @@ A script mod for Phantom Blade Zero (plugin for ScriptModLoader). Enemies you ki
 Offline single-player only. The game build it was last checked against is in `TESTED_BUILD.txt` in the repository root.
 
 ## Status
-Built and tested offline only, against hand-written stand-ins for the game. It has **not** been run inside the game yet. Treat everything below as intended behaviour until you have seen it work. "What to check on the first run" lists what to look for.
+Version 0.9.0, a pre-release. It runs in the game and works in play-testing, but wave challenges such as the "Human-Faced Banyan Trees" are not handled yet (see "Known issues"). The version is the `VERSION` constant in `Mods/EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
 
 Back up your save before the first run. The mod stores its progress in the save under the section name `EarnedProgression`. What the game does with that section if you later remove the mod is untested.
 
@@ -73,7 +73,7 @@ Look in `ScriptModLoader.log` (same folder). Every line from this mod starts wit
 
 | Check | What you should see |
 |---|---|
-| The mod loads | `EarnedProgression: loaded`, then `started: bellSafeRadius 1000, respawnDust 25` |
+| The mod loads | `EarnedProgression: loaded`, then `started 0.9.0: bellSafeRadius 1000, respawnDust 25` |
 | A level is ready | `ready on <level>: N pending, M known bells` |
 | A death | `death: respawn bell <BellID> (actor <name>)`, then `death: N kill(s) coming back, M kept dead near the bell` and `respawn: N spawned` |
 | A rest | the usual `rest at ...` line, ending with `; bell id <BellID>` |

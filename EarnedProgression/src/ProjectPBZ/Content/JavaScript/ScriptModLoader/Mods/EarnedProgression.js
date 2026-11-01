@@ -10,6 +10,7 @@ const { createSettings } = require("./EarnedProgressionLib/Settings");
 const { createDustCut, cutFor } = require("./EarnedProgressionLib/DustCut");
 const Progress = require("./EarnedProgressionLib/Progress");
 
+const VERSION = "0.9.0";
 const SETTINGS_FILE = "EarnedProgression.json";
 const KILL_TICK_MS = 500;
 // A bell counts as the one the player respawns at when it is this close (cm) to the respawn point.
@@ -284,9 +285,10 @@ function startWith(api, modules) {
     });
     api.wrap(DustTips, "DustTips", "enqueueDustChange", (self, args) => onDustGain(self, args));
 
-    api.log("started: bellSafeRadius " + settings.get().bellSafeRadius + ", respawnDust " + settings.get().respawnDust);
+    api.log("started " + VERSION + ": bellSafeRadius " + settings.get().bellSafeRadius + ", respawnDust " + settings.get().respawnDust);
 }
 
+exports.VERSION = VERSION;
 exports.KILL_TICK_MS = KILL_TICK_MS;
 exports.start = start;
 exports.startWith = startWith;
