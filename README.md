@@ -1,6 +1,6 @@
 # PBZ-Pepper-Scripts
 
-Script mods for Phantom Blade Zero, and the tools to build them. Offline single-player only.
+Script mods for Phantom Blade Zero, and the tools to build them.
 
 The game's own logic is JavaScript running in its script engine (PuerTS). These mods are JavaScript too: they are packed into small override `.pak` files that the game loads on top of its own files. Nothing in the game's files is changed, and deleting the mod's files undoes it.
 
