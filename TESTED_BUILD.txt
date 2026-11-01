@@ -1,0 +1,4 @@
+26266538
+
+The Steam build of Phantom Blade Zero these mods were last checked against. After you confirm
+they work on a newer build, replace the number above. See "When the game updates" in README.md.

@@ -1,0 +1,33 @@
+ScriptModLoader and Earned Progression
+=======================================
+
+Phantom Blade Zero and all of its content are the property of S-GAME. These are unofficial
+fan-made mods with no affiliation to S-GAME. They never modify the game's files: they add
+override paks that the engine mounts on top of the originals. Remove the files to undo them.
+
+Permission
+----------
+All code in this project (ScriptModLoader, Earned Progression and the build tools in tools\)
+is original work. You may use, copy, modify and share it, in whole or in part, for
+any purpose. Credit is appreciated but not required.
+
+Game files
+----------
+ScriptModLoader replaces one game script, ProjectPBZ/Content/JavaScript/UI/Widget/Foundation/
+WeaponNormalTextEntry.js, with its own small file. The game's version of that file is an empty
+stub; the replacement keeps the same empty stub and adds one call that starts the loader.
+
+No other game file, script or asset is included in the paks or in this project.
+
+Third-party tools
+-----------------
+tools\get-tools.bat downloads repak and retoc by trumank (https://github.com/trumank/repak,
+https://github.com/trumank/retoc). They are not part of this project and keep their own
+licences, which are included in their downloads.
+
+References
+---------
+For the creation of this mod, PBZ Phantom Souls by PVLW (https://www.nexusmods.com/phantombladezero/mods/36) was used as a
+reference to understand how the game can be modded. None of its files are included in this project, but thanks is nonetheless extended to the developer.
+
+Provided "as is", without warranty of any kind. Use at your own risk; back up your saves.
