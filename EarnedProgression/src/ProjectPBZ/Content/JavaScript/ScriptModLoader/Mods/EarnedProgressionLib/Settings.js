@@ -15,18 +15,18 @@ const bellExceptionIds = [
 // Spawners whose kills are never recorded, so they never come back. Add a spawner's actor name
 // here (it is printed after "kill:" in the log when debugLog is on) to except it by default.
 const enemyExceptionIds = [
-    "BP_AISpawner_C_UAID_BCFCE704F72584FE02_1365768171",
-    "BP_AISpawner_C_UAID_BCFCE704F7250AEA02_1632314381",
-    "BP_AISpawner_C_UAID_BCFCE704F7250AEA02_1632345382",
-    "BP_AISpawner_C_UAID_BCFCE704F7250BEA02_1118764563",
-    "BP_AISpawner_C_UAID_BCFCE704F72584FE02_1378567172",
-    "BP_AISpawner_C_UAID_BCFCE704F7250BEA02_1199443566",
-    "BP_AISpawner_C_2146533651",
-    "BP_AISpawner_C_UAID_BCFCE704F7250BEA02_1143080564",
-    "BP_AISpawner_C_2146533915",
-    "BP_AISpawner_C_UAID_E89C25A75120CC0003_1580536790",
-    "BP_AISpawner_C_UAID_BCFCE704F72584FE02_1400667173",
-    "BP_AISpawner_C_UAID_E89C25A751200A0103_1112069752",
+    // "BP_AISpawner_C_UAID_BCFCE704F72584FE02_1365768171",
+    // "BP_AISpawner_C_UAID_BCFCE704F7250AEA02_1632314381",
+    // "BP_AISpawner_C_UAID_BCFCE704F7250AEA02_1632345382",
+    // "BP_AISpawner_C_UAID_BCFCE704F7250BEA02_1118764563",
+    // "BP_AISpawner_C_UAID_BCFCE704F72584FE02_1378567172",
+    // "BP_AISpawner_C_UAID_BCFCE704F7250BEA02_1199443566",
+    // "BP_AISpawner_C_2146533651",
+    // "BP_AISpawner_C_UAID_BCFCE704F7250BEA02_1143080564",
+    // "BP_AISpawner_C_2146533915",
+    // "BP_AISpawner_C_UAID_E89C25A75120CC0003_1580536790",
+    // "BP_AISpawner_C_UAID_BCFCE704F72584FE02_1400667173",
+    // "BP_AISpawner_C_UAID_E89C25A751200A0103_1112069752",
 ];
 
 // Mob domains (the game's areas that group enemies into fights) whose kills are never recorded. An
@@ -124,8 +124,16 @@ function normalize(raw, warn) {
     return out;
 }
 
+// Settings left out of the default file. They still have their defaults and are read when a file sets them.
+const HIDDEN = ["domainExceptions"];
+
 function defaultsText() {
-    return JSON.stringify(DEFAULTS, null, 2) + "\n";
+    const shown = {};
+    for (const key of Object.keys(DEFAULTS)) {
+        if (!HIDDEN.includes(key))
+            shown[key] = DEFAULTS[key];
+    }
+    return JSON.stringify(shown, null, 2) + "\n";
 }
 
 // deps: path, readText(path), writeText(path, text), clock() in milliseconds, log(text).
