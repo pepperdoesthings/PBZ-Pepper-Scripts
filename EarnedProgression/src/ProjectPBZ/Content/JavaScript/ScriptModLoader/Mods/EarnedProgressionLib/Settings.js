@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // "respawn bell <id>" at each death) or the bell actor's name. Add one here to except it by default.
 const bellExceptionIds = [
     "Brokenbell_FujiDaronngshu",
+    "Brokenbell_HouJieDaronngshu",
     "BP_BrokenBell_C_UAID_E89C25A7512053C502_1432849353",
     "BP_WoodenFrameBell_C_2147475504",
     "BP_WoodenFrameBell_C_2147475609",
@@ -28,14 +29,26 @@ const enemyExceptionIds = [
     "BP_AISpawner_C_UAID_E89C25A751200A0103_1112069752",
 ];
 
+// Mob domains (the game's areas that group enemies into fights) whose kills are never recorded. An
+// entry matches any part of the domain actor's name, ignoring case, so a class name such as
+// "PBZ_MobDomain_C" covers every domain of that kind. The domain is printed after "kill:" in the log.
+const domainExceptionIds = [
+    "PBZ_MobDomain_C",
+];
+
 const DEFAULTS = Object.freeze({
     bellSafeRadius: 1000,
     respawnDust: 25,
     debugLog: true,
+    debugWaveProbe: false,
     bellProximityFallback: false,
+    useBellExceptionPartialId: false,
     bellExceptions: Object.freeze([...bellExceptionIds]),
     enemyExceptions: Object.freeze([...enemyExceptionIds]),
+    domainExceptions: Object.freeze([...domainExceptionIds]),
 });
+const LISTS = ["bellExceptions", "enemyExceptions", "domainExceptions"];
+const SWITCHES = ["debugLog", "debugWaveProbe", "bellProximityFallback", "useBellExceptionPartialId"];
 const RELOAD_MS = 2000;
 
 function isNumber(value) {
@@ -74,14 +87,9 @@ function idList(key, value, warn) {
 
 // Builds a complete settings object from parsed JSON. warn(text) hears about every unusable value.
 function normalize(raw, warn) {
-    const out = {
-        bellSafeRadius: DEFAULTS.bellSafeRadius,
-        respawnDust: DEFAULTS.respawnDust,
-        debugLog: DEFAULTS.debugLog,
-        bellProximityFallback: DEFAULTS.bellProximityFallback,
-        bellExceptions: [...DEFAULTS.bellExceptions],
-        enemyExceptions: [...DEFAULTS.enemyExceptions],
-    };
+    const out = { ...DEFAULTS };
+    for (const key of LISTS)
+        out[key] = [...DEFAULTS[key]];
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
         warn("the file is not a JSON object, using the defaults");
         return out;
@@ -98,19 +106,15 @@ function normalize(raw, warn) {
         else
             warn("respawnDust must be a number, using " + DEFAULTS.respawnDust);
     }
-    if ("debugLog" in raw) {
-        if (typeof raw.debugLog === "boolean")
-            out.debugLog = raw.debugLog;
-        else
-            warn("debugLog must be true or false, using " + DEFAULTS.debugLog);
+    for (const key of SWITCHES) {
+        if (key in raw) {
+            if (typeof raw[key] === "boolean")
+                out[key] = raw[key];
+            else
+                warn(key + " must be true or false, using " + DEFAULTS[key]);
+        }
     }
-    if ("bellProximityFallback" in raw) {
-        if (typeof raw.bellProximityFallback === "boolean")
-            out.bellProximityFallback = raw.bellProximityFallback;
-        else
-            warn("bellProximityFallback must be true or false, using false");
-    }
-    for (const key of ["bellExceptions", "enemyExceptions"]) {
+    for (const key of LISTS) {
         if (key in raw) {
             const list = idList(key, raw[key], warn);
             if (list)
