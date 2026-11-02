@@ -212,7 +212,8 @@ function startWith(api, modules) {
         const found = findDeathBell(player, center);
         const bell = found.bell;
         const bellIds = bell ? [bell.id, bell.actorName, bell.actorName && level + "|" + bell.actorName] : [];
-        if (bell && Progress.isListedAnyCase(settings.get().bellExceptions, ...bellIds)) {
+        const matchBells = { partial: settings.get().useBellExceptionPartialId };
+        if (bell && Progress.isListedAnyCase(settings.get().bellExceptions, matchBells, ...bellIds)) {
             const banked = Progress.bankAll(state);
             spawners.setMapAlive(ai, banked.map((e) => e.k), false);
             save(player);

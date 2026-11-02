@@ -115,11 +115,20 @@ function isListed(list, ...candidates) {
 }
 
 // isListed ignoring case. Unreal names (FName) ignore case, and the game compares bell ids in lower case.
-function isListedAnyCase(list, ...candidates) {
+// An optional first argument { partial: true } makes an entry match anywhere inside a candidate.
+function isListedAnyCase(list, ...args) {
     if (!Array.isArray(list))
         return false;
-    const lower = list.map((x) => String(x).toLowerCase());
-    return candidates.some((c) => typeof c === "string" && c.length > 0 && lower.includes(c.toLowerCase()));
+    const hasOptions = args.length > 0 && args[0] !== null && typeof args[0] === "object";
+    const partial = hasOptions && args[0].partial === true;
+    const candidates = hasOptions ? args.slice(1) : args;
+    const lower = list.map((x) => String(x).toLowerCase()).filter((x) => x.length > 0);
+    return candidates.some((c) => {
+        if (typeof c !== "string" || c.length === 0)
+            return false;
+        const name = c.toLowerCase();
+        return partial ? lower.some((e) => name.includes(e)) : lower.includes(name);
+    });
 }
 
 // Removes the listed spawners from pending (and from again). Returns how many pending kills went.

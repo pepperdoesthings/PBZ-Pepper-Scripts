@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // "respawn bell <id>" at each death) or the bell actor's name. Add one here to except it by default.
 const bellExceptionIds = [
     "Brokenbell_FujiDaronngshu",
+    "Brokenbell_HouJieDaronngshu",
     "BP_BrokenBell_C_UAID_E89C25A7512053C502_1432849353",
     "BP_WoodenFrameBell_C_2147475504",
     "BP_WoodenFrameBell_C_2147475609",
@@ -41,12 +42,13 @@ const DEFAULTS = Object.freeze({
     debugLog: true,
     debugWaveProbe: false,
     bellProximityFallback: false,
+    useBellExceptionPartialId: false,
     bellExceptions: Object.freeze([...bellExceptionIds]),
     enemyExceptions: Object.freeze([...enemyExceptionIds]),
     domainExceptions: Object.freeze([...domainExceptionIds]),
 });
 const LISTS = ["bellExceptions", "enemyExceptions", "domainExceptions"];
-const SWITCHES = ["debugLog", "debugWaveProbe", "bellProximityFallback"];
+const SWITCHES = ["debugLog", "debugWaveProbe", "bellProximityFallback", "useBellExceptionPartialId"];
 const RELOAD_MS = 2000;
 
 function isNumber(value) {
