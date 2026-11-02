@@ -5,7 +5,7 @@ A script mod for Phantom Blade Zero (plugin for ScriptModLoader). Enemies you ki
 Offline single-player only. The game build it was last checked against is in `TESTED_BUILD.txt` in the repository root.
 
 ## Status
-Version 0.9.0, a pre-release. It runs in the game and works in play-testing, but wave challenges such as the "Human-Faced Banyan Trees" are not handled yet (see "Known issues"). The version is the `VERSION` constant in `Mods/EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
+Version 0.9.1, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `Mods/EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
 
 Back up your save before the first run. The mod stores its progress in the save under the section name `EarnedProgression`. What the game does with that section if you later remove the mod is untested.
 
@@ -23,17 +23,16 @@ Back up your save before the first run. The mod stores its progress in the save 
 
 ## Known issues
 
-**Wave challenges, such as the "Human-Faced Banyan Trees", are effectively broken for now.** Some fights are made of groups of enemies that the game releases in stages, one wave after the next. The mod cannot tell those enemies from ordinary ones. They are normal spawners to it, so it records each kill as pending like any other.
+**Wave challenges.** Some fights are made of groups of enemies that the game releases in stages, one wave after the next. If the mod recorded those kills, a death partway through would bring every earlier wave back at once instead of in stages.
 
-If you die partway through such a fight, the mod brings every pending enemy back at once, including the ones from earlier waves. The game does not bring them back in stages, so you respawn into the whole fight at the same time, which can put you in serious trouble.
+The "Human-Faced Banyan Trees" are handled since 0.9.1. Their enemies belong to mob domains of the class `PBZ_MobDomain_C`, which is on the default `domainExceptions` list, so those kills are never recorded and a death there behaves as in the base game. This was checked in play on two of the challenges. Their respawn bells are also on the default `bellExceptions` list as a fallback.
 
-The way around this is the two exception lists:
+Other wave fights may not use that kind of domain, and the whole game has not been played through yet. Three lists can fix a fight that misbehaves:
+- `domainExceptions`: enemies in a matching mob domain are never recorded.
 - `bellExceptions`: if the bell you respawn at is on this list, nothing comes back on that death.
 - `enemyExceptions`: spawners on this list are never recorded, so they never come back.
 
-A challenge only works properly once its respawn bell, or its enemies' spawner ids, are on those lists. Those ids have not been found for most wave challenges yet, so until they are, expect them to misbehave. The Human-Faced Banyan Trees are a known case.
-
-**Helping fix it.** The log is on by default. If you die in a wave challenge, open `ScriptModLoader.log` right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. You can also put them in your own `EarnedProgression.json` (see "Settings") to fix it on your machine.
+**Helping fix it.** The log is on by default. If a fight misbehaves after a death, open `ScriptModLoader.log` right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. Setting `debugWaveProbe` to `true` also logs each kill's mob domain and group. You can put the ids in your own `EarnedProgression.json` (see "Settings") to fix it on your machine.
 
 ## Install
 1. Install **ScriptModLoader 1.1.0 or newer** first (see its README). Remove any other mod that replaces `WeaponNormalTextEntry.js`, such as Phantom Souls or Movement Speed. It does not work together with Phantom Souls, which has its own respawn rules.
@@ -77,7 +76,7 @@ Look in `ScriptModLoader.log` (same folder). Every line from this mod starts wit
 
 | Check | What you should see |
 |---|---|
-| The mod loads | `EarnedProgression: loaded`, then `started 0.9.0: bellSafeRadius 1000, respawnDust 25` |
+| The mod loads | `EarnedProgression: loaded`, then `started 0.9.1: bellSafeRadius 1000, respawnDust 25` |
 | A level is ready | `ready on <level>: N pending, M known bells` |
 | A death | `death: respawn bell <BellID> (actor <name>)`, then `death: N kill(s) coming back, M kept dead near the bell` and `respawn: N spawned` |
 | A rest | the usual `rest at ...` line, ending with `; bell id <BellID>` |
@@ -85,6 +84,7 @@ Look in `ScriptModLoader.log` (same folder). Every line from this mod starts wit
 | A death where the bell is not found | `death: could not tell which bell you respawn at (<reason>), reviving as normal` |
 | A rest | `rest at <level>\|<bell>: new bell, N kill(s) made permanent` or `known bell, nothing changes` |
 | Kills (`debugLog` true, the default) | `kill: <spawner> ...` for each enemy you kill |
+| A kill in an excepted domain (`debugLog` true) | `kill: <spawner> is in domain <name> on the domain exception list, not recorded` |
 | The Dust cut (`debugLog` true, the default) | `dust: <spawner> gave N, M taken back` |
 
 Things only the game can confirm:
@@ -100,7 +100,7 @@ If the log never mentions `EarnedProgression`, ScriptModLoader did not start the
 
 ## Files
 - `Mods/EarnedProgression.js`: the plugin.
-- `Mods/EarnedProgressionLib/`: `Settings`, `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the only code that touches game objects).
+- `Mods/EarnedProgressionLib/`: `Settings`, `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the code that touches game objects), and `WaveProbe` (diagnostic logging, only while `debugWaveProbe` is on; it only reads).
 
 ## Credits
 - The approach is based on PVLW's Phantom Souls mod, whose author allows reuse with credit: how enemies are brought back around the death screen, the kill watch, the codex-based boss test, and the Dust pop-up cut. The code is re-implemented here.
