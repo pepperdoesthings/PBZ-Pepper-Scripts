@@ -90,6 +90,29 @@ function createSpawners(deps) {
         }
     }
 
+    // The actor name of the mob domain a spawner belongs to ("" for none). The spawner holds a soft
+    // reference whose text ends in ".<actor name>".
+    function domainName(spawner) {
+        try {
+            const info = spawner.SpawnInfo;
+            if (!info)
+                return "";
+            const path = String(UE.KismetSystemLibrary.Conv_SoftObjectReferenceToString(info.MobDomain) || "");
+            return path.slice(path.lastIndexOf(".") + 1);
+        }
+        catch (e) {
+            return "";
+        }
+    }
+
+    // True when any entry of list appears in the spawner's domain name, ignoring case.
+    function inDomainList(spawner, list) {
+        if (!Array.isArray(list) || list.length === 0)
+            return false;
+        const name = domainName(spawner).toLowerCase();
+        return name.length > 0 && list.some((e) => typeof e === "string" && e.length > 0 && name.includes(e.toLowerCase()));
+    }
+
     // Splits the level's spawners: normal ones, and how many were left out as bosses or boss adds.
     function classify(ai) {
         const list = loaded(ai);
@@ -197,7 +220,7 @@ function createSpawners(deps) {
         return result;
     }
 
-    return { loaded, isBoss, groupKey, classify, setMapAlive, respawnNamed };
+    return { loaded, isBoss, groupKey, domainName, inDomainList, classify, setMapAlive, respawnNamed };
 }
 
 exports.createSpawners = createSpawners;

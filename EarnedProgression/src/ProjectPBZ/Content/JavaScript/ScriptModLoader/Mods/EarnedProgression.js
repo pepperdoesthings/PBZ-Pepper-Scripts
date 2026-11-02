@@ -9,6 +9,7 @@ const { createKills } = require("./EarnedProgressionLib/Kills");
 const { createSettings } = require("./EarnedProgressionLib/Settings");
 const { createDustCut, cutFor } = require("./EarnedProgressionLib/DustCut");
 const Progress = require("./EarnedProgressionLib/Progress");
+const { createWaveProbe } = require("./EarnedProgressionLib/WaveProbe");
 
 const VERSION = "0.9.0";
 const SETTINGS_FILE = "EarnedProgression.json";
@@ -55,6 +56,22 @@ function startWith(api, modules) {
     const game = createGame({ UE, puerts, tsHelper });
     const spawners = createSpawners({ UE, puerts, game, log: api.log });
     const dustCut = createDustCut();
+    // Diagnostic logging of mob domains, waves and item gains, only while debugWaveProbe is on. It is
+    // turned on or off at a level load; the kill, death and respawn lines follow that choice.
+    const waveProbe = createWaveProbe({ UE, puerts, tsHelper, game, spawners, timers, clock, log: (t) => api.log("probe: " + t) });
+    let probing = false;
+    const probe = {
+        ready(player) {
+            probing = settings.get().debugWaveProbe;
+            if (probing)
+                waveProbe.ready(player);
+            else
+                waveProbe.stop();
+        },
+        kill(name, again) { if (probing) waveProbe.kill(name, again); },
+        death(names) { if (probing) waveProbe.death(names); },
+        respawned() { if (probing) waveProbe.respawned(); },
+    };
 
     let state = Progress.emptyState();
     let watch;
@@ -78,9 +95,25 @@ function startWith(api, modules) {
         state = loaded.state;
     }
 
-    function onKill(kill) {
+    // The loaded spawners with these actor names whose mob domain is on the domain exception list.
+    function inExceptedDomain(player, names) {
+        const list = settings.get().domainExceptions;
+        const ai = list.length > 0 && names.length > 0 ? game.aiSubsystem(player) : undefined;
+        if (!ai)
+            return [];
+        const wanted = new Set(names);
+        return spawners.loaded(ai).filter((s) => wanted.has(s.GetName()) && spawners.inDomainList(s, list));
+    }
+
+    function onKill(player, kill) {
+        probe.kill(kill.k, Progress.isAgain(state, kill.k));
         if (Progress.isListed(settings.get().enemyExceptions, kill.k)) {
             debug("kill: " + kill.k + " is on the enemy exception list, not recorded");
+            return;
+        }
+        const excepted = inExceptedDomain(player, [kill.k]);
+        if (excepted.length > 0) {
+            debug("kill: " + kill.k + " is in domain " + spawners.domainName(excepted[0]) + " on the domain exception list, not recorded");
             return;
         }
         const again = Progress.isAgain(state, kill.k);
@@ -99,7 +132,7 @@ function startWith(api, modules) {
             watch = undefined;
         }
         load(player);
-        const kills = createKills({ game, spawners, clock, log: debug, onKill });
+        const kills = createKills({ game, spawners, clock, log: debug, onKill: (kill) => onKill(player, kill) });
         const timer = timers.setInterval(() => {
             try {
                 if (!game.isAlive(player)) {
@@ -119,6 +152,7 @@ function startWith(api, modules) {
             }
         }, KILL_TICK_MS);
         watch = { timer };
+        probe.ready(player);
         api.log("ready on " + game.levelName(player) + ": " + state.pending.length + " pending, " + state.bells.length + " known bells");
     }
 
@@ -166,6 +200,12 @@ function startWith(api, modules) {
         if (!ai) {
             api.log("death: no spawner subsystem, nothing brought back");
             return;
+        }
+        probe.death(state.pending.map((e) => e.k));
+        const excepted = inExceptedDomain(player, state.pending.map((e) => e.k)).map((s) => s.GetName());
+        if (excepted.length > 0) {
+            const dropped = Progress.dropListed(state, excepted);
+            api.log("death: " + dropped + " pending kill(s) dropped, their domain is on the domain exception list");
         }
         const level = game.levelName(player);
         const center = game.reviveCenter(player);
@@ -264,8 +304,11 @@ function startWith(api, modules) {
     api.wrap(RenewalPlayer, "RenewalPlayer", "SaveLoad", undefined, (self) => onReady(self));
     api.wrap(RenewalPlayer, "RenewalPlayer", "PushWidgetAndChangeData", (self) => { onDeath(self); });
     api.wrap(RenewalPlayer, "RenewalPlayer", "stepRespawnGroup", (self) => self.respawnPendingGroup, (self, args, group) => {
-        if (group === 3)
+        if (group === 3) {
             onRespawnMonsters(self);
+            if (self.IsPlayerControlled())
+                probe.respawned();
+        }
     });
     api.wrap(RenewalPlayer, "RenewalPlayer", "BindBellDelegate", undefined, (self) => {
         const bells = game.bellManager(self);

@@ -17,6 +17,7 @@ Back up your save before the first run. The mod stores its progress in the save 
 - An enemy that came back and is killed again gives only `respawnDust` percent of its Dust, until it is made permanent.
 - If you die and the game puts you at a bell on `bellExceptions`, nothing comes back and every pending kill becomes permanent, as in the base game. This is for fights whose enemies would break if they came back all at once.
 - An enemy on `enemyExceptions` is never recorded, so it never comes back and always gives full Dust.
+- An enemy whose mob domain matches `domainExceptions` is never recorded either. A pending kill whose domain was added to the list later is dropped at the next death.
 - Bosses, minibosses and the enemies in a boss's arena are never touched. The base game handles them.
 - Quitting and reloading does not bring pending enemies back. Only a death does.
 
@@ -58,11 +59,13 @@ A challenge only works properly once its respawn bell, or its enemies' spawner i
 | `bellSafeRadius` | `1000` | Centimetres (1000 = 10 m). Pending kills this close to the respawn bell are not brought back. `0` turns the safe zone off. |
 | `respawnDust` | `25` | Percent of its Dust that an enemy gives when it is killed again after coming back. 0 to 100. `100` means full Dust. |
 | `debugLog` | `true` | `true` adds a log line for each kill and Dust cut. On by default so that the ids needed for the exception lists are always in the log. Set `false` for a quieter log. |
+| `debugWaveProbe` | `false` | `true` adds diagnostic `probe:` lines: the level's mob domains, the domain and group of each kill, wave state at each death and respawn, and every item gained with the last kill before it. Read at each level load. Makes the log much longer. |
 | `bellProximityFallback` | `false` | `true` uses the bell actor nearest to the respawn point when the game has no respawn bell set. Off by default because it can pick the wrong actor. |
 | `bellExceptions` | the list `bellExceptionIds` in `Settings.js` | Bell ids. A death that respawns you at one of these brings nothing back and makes pending kills permanent. An id is the game's BellID (logged as `respawn bell <id>`), the bell's actor name, or `<level>\|<actor name>`. Case does not matter. Writing your own list replaces the default one. |
 | `enemyExceptions` | 12 spawner ids found safe in play (the list `enemyExceptionIds` in `Settings.js`) | Spawner ids (the name printed after `kill:` in the log). These enemies are never recorded as kills. Writing your own list replaces the default one. |
+| `domainExceptions` | `["PBZ_MobDomain_C"]` | Parts of mob domain names. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry matches anywhere in the domain's actor name, ignoring case, so a class name covers every domain of that kind. Enemies in a matching domain are never recorded as kills. Writing your own list replaces the default one. |
 
-A value that cannot be used falls back to its default and is logged once. Entries in the two lists are trimmed, blanks are dropped and repeats are ignored.
+A value that cannot be used falls back to its default and is logged once. Entries in the three lists are trimmed, blanks are dropped and repeats are ignored.
 
 **Finding ids.** Every death logs `death: respawn bell <BellID> (actor <actor name>)`, and every rest ends with `; bell id <BellID>`. Either id works in `bellExceptions`; the BellID is the one the game itself uses. With `debugLog` on (the default) every kill logs a `kill: <spawner>` line; that name is the id for `enemyExceptions`. The file is re-read about every 2 seconds, so you can add ids while the game runs.
 
