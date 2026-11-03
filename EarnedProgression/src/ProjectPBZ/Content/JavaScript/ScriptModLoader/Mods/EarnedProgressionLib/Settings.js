@@ -42,12 +42,13 @@ const DEFAULTS = Object.freeze({
     debugOnScreen: false,
     bellProximityFallback: false,
     useBellExceptionPartialId: false,
+    newBellMessage: true,
     bellExceptions: Object.freeze([...bellExceptionIds]),
     enemyExceptions: Object.freeze([...enemyExceptionIds]),
     domainExceptions: Object.freeze([...domainExceptionIds]),
 });
 const LISTS = ["bellExceptions", "enemyExceptions", "domainExceptions"];
-const SWITCHES = ["debugLog", "debugWaveProbe", "debugOnScreen", "bellProximityFallback", "useBellExceptionPartialId"];
+const SWITCHES = ["debugLog", "debugWaveProbe", "debugOnScreen", "bellProximityFallback", "useBellExceptionPartialId", "newBellMessage"];
 const RELOAD_MS = 2000;
 
 function isNumber(value) {

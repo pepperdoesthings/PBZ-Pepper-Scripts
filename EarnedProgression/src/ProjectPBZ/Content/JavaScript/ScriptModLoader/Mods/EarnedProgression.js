@@ -37,7 +37,7 @@ function gameModules() {
 }
 
 // The game's one-line tip with our own text (UIHelper.showTipsText). Loaded on first use, so a
-// failure only affects the debug messages.
+// failure only affects the messages.
 function gameShowText(ctx, text) {
     const cpp = require("cpp");
     const UIHelper = require("../../Library/UIHelper").default;
@@ -69,18 +69,23 @@ function startWith(api, modules) {
     // Diagnostic logging of mob domains, waves and item gains, only while debugWaveProbe is on. It is
     // turned on or off at a level load; the kill, death and respawn lines follow that choice.
     const waveProbe = createWaveProbe({ UE, puerts, tsHelper, game, spawners, timers, clock, log: (t) => api.log("probe: " + t) });
-    // An on-screen copy of a debug line, only with debugOnScreen on. A failure is logged once.
+    // A message in the game's one-line tip. A failure is logged once, then messages are skipped.
     let screenBroken = false;
-    function showOnScreen(ctx, text) {
-        if (!settings.get().debugOnScreen || screenBroken || !modules.showText)
+    function showMessage(ctx, text) {
+        if (screenBroken || !modules.showText)
             return;
         try {
             modules.showText(ctx, text);
         }
         catch (e) {
             screenBroken = true;
-            api.log("on-screen message failed: " + (e && e.message ? e.message : e) + "; debug lines go to the log only");
+            api.log("on-screen message failed: " + (e && e.message ? e.message : e) + "; no more on-screen messages this session");
         }
+    }
+    // An on-screen copy of a debug line, only with debugOnScreen on.
+    function showOnScreen(ctx, text) {
+        if (settings.get().debugOnScreen)
+            showMessage(ctx, text);
     }
     const rewardWatch = createRewardWatch({
         UE, puerts, tsHelper, game, clock,
@@ -128,6 +133,12 @@ function startWith(api, modules) {
         respawned() { if (probing) waveProbe.respawned(); },
         tick(player) { if (probing) guarded("reward watch", () => rewardWatch.tick(player)); },
     };
+
+    function newBellText(count) {
+        if (count === 0)
+            return "New bell reached. No pending kills to keep.";
+        return "New bell reached. " + count + (count === 1 ? " enemy" : " enemies") + " will stay dead.";
+    }
 
     let state = Progress.emptyState();
     let watch;
@@ -343,6 +354,8 @@ function startWith(api, modules) {
         if (result.newBell) {
             spawners.setMapAlive(ai, result.banked.map((e) => e.k), false);
             save(player);
+            if (settings.get().newBellMessage)
+                showMessage(player, newBellText(result.banked.length));
         }
         let bellId = "";
         try {

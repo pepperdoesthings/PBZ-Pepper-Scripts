@@ -12,7 +12,7 @@ Back up your save before the first run. The mod stores its progress in the save 
 ## The rules
 - A normal enemy you kill is **pending**.
 - If you die, pending enemies come back, except those within `bellSafeRadius` of the bell you respawn at. Those stay dead and stay pending.
-- If you rest at a bell you have never rested at before, every pending kill becomes **permanent**.
+- If you rest at a bell you have never rested at before, every pending kill becomes **permanent**. The game shows "New bell reached. N enemies will stay dead." (turn it off with `newBellMessage`).
 - Resting at a bell you already know changes nothing. Pending kills stay pending.
 - An enemy that came back and is killed again gives only `respawnDust` percent of its Dust, until it is made permanent.
 - An enemy killed inside a trial behind a broken bell (wave challenges such as the "Human-Faced Banyan Trees") is never recorded and gives full Dust: the game resets the trial itself when you die. The mod asks the game's bell manager whether that trial state is on (`IsInBrokenBellState`) at each kill, so no ids are needed. Kills made before the trial stay pending and come back on a death as usual.
@@ -76,6 +76,7 @@ A `cleared again` result with an item is the case worth sending in: it means the
 | `debugOnScreen` | `false` | With `debugWaveProbe` also `true`, shows the `rewards:` messages in the game as a one-line tip, starting with `EP:`. If the game cannot show them, the log says `on-screen message failed` once and they go to the log only. |
 | `bellProximityFallback` | `false` | `true` uses the bell actor nearest to the respawn point when the game has no respawn bell set. Off by default because it can pick the wrong actor. |
 | `useBellExceptionPartialId` | `false` | `true` lets a `bellExceptions` entry match any part of a bell id, so `Brokenbell_` covers every bell whose id contains it. `false` needs the whole id. |
+| `newBellMessage` | `true` | At a rest at a new bell, shows "New bell reached. N enemies will stay dead." in the game's one-line tip ("No pending kills to keep." when there were none). If the game cannot show it, the log says `on-screen message failed` once. |
 | `bellExceptions` | the list `bellExceptionIds` in `Settings.js` | Bell ids. A death that respawns you at one of these brings nothing back and makes pending kills permanent. An id is the game's BellID (logged as `respawn bell <id>`), the bell's actor name, or `<level>\|<actor name>`. Case does not matter. The whole id must match unless `useBellExceptionPartialId` is on. Writing your own list replaces the default one. |
 | `enemyExceptions` | empty (the list `enemyExceptionIds` in `Settings.js`) | Spawner ids (the name printed after `kill:` in the log). These enemies are never recorded as kills. Writing your own list replaces the default one. |
 | `domainExceptions` | empty | Parts of mob domain names. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry matches anywhere in the domain's actor name, ignoring case, so a class name covers every domain of that kind. Enemies in a matching domain are never recorded as kills. Not written to the default file, so the built-in list (`domainExceptionIds` in `Settings.js`) is used unless you add the key yourself. Writing your own list replaces the default one. |
