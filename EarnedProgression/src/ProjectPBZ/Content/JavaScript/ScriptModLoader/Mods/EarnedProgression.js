@@ -220,12 +220,23 @@ function startWith(api, modules) {
         const found = findDeathBell(player, center);
         const bell = found.bell;
         const bellIds = bell ? [bell.id, bell.actorName, bell.actorName && level + "|" + bell.actorName] : [];
-        const matchBells = { partial: settings.get().useBellExceptionPartialId };
-        if (bell && Progress.isListedAnyCase(settings.get().bellExceptions, matchBells, ...bellIds)) {
+        // Nothing comes back and pending kills become permanent, as in the base game.
+        const bankAll = (why) => {
             const banked = Progress.bankAll(state);
             spawners.setMapAlive(ai, banked.map((e) => e.k), false);
             save(player);
-            api.log("death: respawning at an excepted bell (" + (bell.id || bell.actorName) + "), " + banked.length + " kill(s) made permanent");
+            api.log("death: " + why + ", " + banked.length + " kill(s) made permanent");
+        };
+        const trial = game.brokenBellTrial(player);
+        if (!trial.ok)
+            api.log("death: could not tell whether this is a broken bell trial (" + trial.error + ")");
+        else if (trial.value) {
+            bankAll("in a broken bell trial (respawn bell " + (bell ? bell.id || bell.actorName : "unknown") + ")");
+            return;
+        }
+        const matchBells = { partial: settings.get().useBellExceptionPartialId };
+        if (bell && Progress.isListedAnyCase(settings.get().bellExceptions, matchBells, ...bellIds)) {
+            bankAll("respawning at an excepted bell (" + (bell.id || bell.actorName) + ")");
             return;
         }
         if (!bell)

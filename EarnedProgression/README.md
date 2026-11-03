@@ -15,6 +15,7 @@ Back up your save before the first run. The mod stores its progress in the save 
 - If you rest at a bell you have never rested at before, every pending kill becomes **permanent**.
 - Resting at a bell you already know changes nothing. Pending kills stay pending.
 - An enemy that came back and is killed again gives only `respawnDust` percent of its Dust, until it is made permanent.
+- If you die inside a trial behind a broken bell (wave challenges such as the "Human-Faced Banyan Trees"), nothing comes back and every pending kill becomes permanent, as in the base game. The mod asks the game's bell manager whether that trial state is on (`IsInBrokenBellState`), so no ids are needed.
 - If you die and the game puts you at a bell on `bellExceptions`, nothing comes back and every pending kill becomes permanent, as in the base game. This is for fights whose enemies would break if they came back all at once.
 - An enemy on `enemyExceptions` is never recorded, so it never comes back and always gives full Dust.
 - An enemy whose mob domain matches `domainExceptions` is never recorded either. A pending kill whose domain was added to the list later is dropped at the next death.
@@ -80,6 +81,7 @@ Look in `ScriptModLoader.log` (same folder). Every line from this mod starts wit
 | A level is ready | `ready on <level>: N pending, M known bells` |
 | A death | `death: respawn bell <BellID> (actor <name>)`, then `death: N kill(s) coming back, M kept dead near the bell` and `respawn: N spawned` |
 | A rest | the usual `rest at ...` line, ending with `; bell id <BellID>` |
+| A death in a broken bell trial | `death: in a broken bell trial (respawn bell <id>), N kill(s) made permanent` |
 | A death at an excepted bell | `death: respawning at an excepted bell (<name>), N kill(s) made permanent` |
 | A death where the bell is not found | `death: could not tell which bell you respawn at (<reason>), reviving as normal` |
 | A rest | `rest at <level>\|<bell>: new bell, N kill(s) made permanent` or `known bell, nothing changes` |
