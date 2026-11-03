@@ -22,7 +22,7 @@ The game's own logic is JavaScript running in its script engine (PuerTS). These 
 
 ## Known issues
 
-- **Wave challenges.** Fights made of waves of enemies that the game releases in stages could come back all at once after a death. The "Human-Faced Banyan Trees" are handled since 0.9.1, checked in play on two of them. Other wave fights may still misbehave, as the whole game has not been played through with the mod yet. Details and the fix are in [EarnedProgression/README.md](EarnedProgression/README.md#known-issues).
+- **Wave challenges.** Fights made of waves of enemies that the game releases in stages could come back all at once after a death. Since 0.9.2, trials behind a broken bell such as the "Human-Faced Banyan Trees" are recognised through the game's own trial state, so no ids are needed. Wave fights that are not such trials may still misbehave, as the whole game has not been played through with the mod yet. Details and the fix are in [EarnedProgression/README.md](EarnedProgression/README.md#known-issues).
 - **Logs help.** If a fight misbehaves, the author appreciates the log from just after the death. Open `ScriptModLoader.log` in the `~mods` folder right after you die and send the last lines. Earned Progression's detailed logging is on by default for this reason.
 
 ## Run the build scripts

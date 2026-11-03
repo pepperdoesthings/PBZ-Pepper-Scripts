@@ -5,8 +5,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Bells where a death revives nothing. An id is the bell's BellID (as the game names it, logged as
 // "respawn bell <id>" at each death) or the bell actor's name. Add one here to except it by default.
 const bellExceptionIds = [
-    "Brokenbell_FujiDaronngshu",
-    "Brokenbell_HouJieDaronngshu",
+    // "Brokenbell_FujiDaronngshu",
+    // "Brokenbell_HouJieDaronngshu",
+    // "Brokenbell_DaYingDaronngshu",
 ];
 
 // Spawners whose kills are never recorded, so they never come back. Add a spawner's actor name

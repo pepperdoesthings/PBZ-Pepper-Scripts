@@ -97,6 +97,21 @@ function createGame(deps) {
         return UE.SubsystemBlueprintLibrary.GetWorldSubsystem(ctx, UE.BellManager.StaticClass());
     }
 
+    // Whether the player is inside a trial behind a broken bell (a wave challenge such as the
+    // Human-Faced Banyan Trees). The bell manager keeps this state for the whole trial; the game's
+    // map reads it to block teleports. Returns { ok: true, value } or { ok: false, error }.
+    function brokenBellTrial(ctx) {
+        try {
+            const bells = bellManager(ctx);
+            if (!bells || typeof bells.IsInBrokenBellState !== "function")
+                return { ok: false, error: "no bell manager" };
+            return { ok: true, value: !!bells.IsInBrokenBellState() };
+        }
+        catch (e) {
+            return { ok: false, error: e && e.message ? String(e.message) : String(e) };
+        }
+    }
+
     // Where the player comes back after dying (the bell), or undefined when the game will not say.
     function reviveCenter(ctx) {
         try {
@@ -168,7 +183,7 @@ function createGame(deps) {
         playerActor.ChangeDustNum(false, amount);
     }
 
-    return { isAlive, hasTag, levelName, location, player, readSection, writeSection, aiSubsystem, bellManager, reviveCenter, respawnBell, listBells, takeDust };
+    return { isAlive, hasTag, levelName, location, player, readSection, writeSection, aiSubsystem, bellManager, brokenBellTrial, reviveCenter, respawnBell, listBells, takeDust };
 }
 
 exports.SECTION_ID = SECTION_ID;

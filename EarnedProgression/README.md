@@ -5,7 +5,7 @@ A script mod for Phantom Blade Zero (plugin for ScriptModLoader). Enemies you ki
 Offline single-player only. The game build it was last checked against is in `TESTED_BUILD.txt` in the repository root.
 
 ## Status
-Version 0.9.1, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `Mods/EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
+Version 0.9.2, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `Mods/EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
 
 Back up your save before the first run. The mod stores its progress in the save under the section name `EarnedProgression`. What the game does with that section if you later remove the mod is untested.
 
@@ -15,7 +15,9 @@ Back up your save before the first run. The mod stores its progress in the save 
 - If you rest at a bell you have never rested at before, every pending kill becomes **permanent**.
 - Resting at a bell you already know changes nothing. Pending kills stay pending.
 - An enemy that came back and is killed again gives only `respawnDust` percent of its Dust, until it is made permanent.
-- If you die and the game puts you at a bell on `bellExceptions`, nothing comes back and every pending kill becomes permanent, as in the base game. This is for fights whose enemies would break if they came back all at once.
+- An enemy killed inside a trial behind a broken bell (wave challenges such as the "Human-Faced Banyan Trees") is never recorded and gives full Dust: the game resets the trial itself when you die. The mod asks the game's bell manager whether that trial state is on (`IsInBrokenBellState`) at each kill, so no ids are needed. Kills made before the trial stay pending and come back on a death as usual.
+- If the trial state cannot be read at a kill, the kill is recorded with a mark. A death inside a trial makes the marked kills permanent.
+- If you die and the game puts you at a bell on `bellExceptions`, nothing comes back and every pending kill becomes permanent, as in the base game. The list is empty by default. It is for fights the trial check does not cover, whose enemies would break if they came back all at once.
 - An enemy on `enemyExceptions` is never recorded, so it never comes back and always gives full Dust.
 - An enemy whose mob domain matches `domainExceptions` is never recorded either. A pending kill whose domain was added to the list later is dropped at the next death.
 - Bosses, minibosses and the enemies in a boss's arena are never touched. The base game handles them.
@@ -25,9 +27,9 @@ Back up your save before the first run. The mod stores its progress in the save 
 
 **Wave challenges.** Some fights are made of groups of enemies that the game releases in stages, one wave after the next. If the mod recorded those kills, a death partway through would bring every earlier wave back at once instead of in stages.
 
-The respawn bells of the first two "Human-Faced Banyan Trees" are on the default `bellExceptions` list, so a death there brings nothing back. Matching their mob domain class (`PBZ_MobDomain_C`) turned out to be the wrong signal: the third tree uses an ordinary `BP_MobDomain_C`, and one level has 17 `PBZ_MobDomain_C` domains. The default `domainExceptions` list is empty for now.
+Since 0.9.2, trials behind a broken bell, such as the "Human-Faced Banyan Trees", are found through the game's own trial state (see "The rules"), so their kills are never recorded. This was checked in play at the third Banyan Tree. Earlier attempts matched the respawn bell ids or the mob domain class (`PBZ_MobDomain_C`); the class turned out to be the wrong signal, as the third tree uses an ordinary `BP_MobDomain_C`. The default `bellExceptions` and `domainExceptions` lists are now empty.
 
-Other wave fights may not use that kind of domain, and the whole game has not been played through yet. Three lists can fix a fight that misbehaves:
+Wave fights that are not broken bell trials may still misbehave, and the whole game has not been played through yet. Three lists can fix a fight that misbehaves:
 - `domainExceptions`: enemies in a matching mob domain are never recorded.
 - `bellExceptions`: if the bell you respawn at is on this list, nothing comes back on that death.
 - `enemyExceptions`: spawners on this list are never recorded, so they never come back.
@@ -76,10 +78,13 @@ Look in `ScriptModLoader.log` (same folder). Every line from this mod starts wit
 
 | Check | What you should see |
 |---|---|
-| The mod loads | `EarnedProgression: loaded`, then `started 0.9.1: bellSafeRadius 1000, respawnDust 25` |
+| The mod loads | `EarnedProgression: loaded`, then `started 0.9.2: bellSafeRadius 1000, respawnDust 25` |
 | A level is ready | `ready on <level>: N pending, M known bells` |
 | A death | `death: respawn bell <BellID> (actor <name>)`, then `death: N kill(s) coming back, M kept dead near the bell` and `respawn: N spawned` |
 | A rest | the usual `rest at ...` line, ending with `; bell id <BellID>` |
+| A kill in a broken bell trial (`debugLog` true) | `kill: <spawner> in domain <name> in a broken bell trial, not recorded` |
+| A kill whose trial state is unknown (`debugLog` true) | `kill: <spawner> ..., pending N, marked: could not tell whether this is a broken bell trial (<reason>)` |
+| A death in a broken bell trial | `death: in a broken bell trial (respawn bell <id>), N marked kill(s) made permanent, the rest as normal`, then the usual `death: N kill(s) coming back` line |
 | A death at an excepted bell | `death: respawning at an excepted bell (<name>), N kill(s) made permanent` |
 | A death where the bell is not found | `death: could not tell which bell you respawn at (<reason>), reviving as normal` |
 | A rest | `rest at <level>\|<bell>: new bell, N kill(s) made permanent` or `known bell, nothing changes` |

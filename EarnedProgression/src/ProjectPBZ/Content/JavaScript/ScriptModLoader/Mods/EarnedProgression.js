@@ -11,7 +11,7 @@ const { createDustCut, cutFor } = require("./EarnedProgressionLib/DustCut");
 const Progress = require("./EarnedProgressionLib/Progress");
 const { createWaveProbe } = require("./EarnedProgressionLib/WaveProbe");
 
-const VERSION = "0.9.1";
+const VERSION = "0.9.2";
 const SETTINGS_FILE = "EarnedProgression.json";
 const KILL_TICK_MS = 500;
 // A bell counts as the one the player respawns at when it is this close (cm) to the respawn point.
@@ -123,11 +123,22 @@ function startWith(api, modules) {
             debug("kill: " + kill.k + " is in domain " + domain + " on the domain exception list, not recorded");
             return;
         }
+        const where = domain ? " in domain " + domain : " in no domain";
         const again = Progress.isAgain(state, kill.k);
-        if (Progress.recordKill(state, kill)) {
+        // A trial behind a broken bell resets itself when you die, so its enemies are left to the game.
+        // The Dust pairing still sees the kill as a first kill, so it gives full Dust.
+        const trial = game.brokenBellTrial(player);
+        if (trial.ok && trial.value) {
+            dustCut.noteKill({ at: clock(), again: false, name: kill.k });
+            debug("kill: " + kill.k + where + " in a broken bell trial, not recorded");
+            return;
+        }
+        // Not knowing, the kill is recorded with a mark; a death in a trial then makes it permanent.
+        const entry = trial.ok ? kill : { ...kill, t: true };
+        if (Progress.recordKill(state, entry)) {
             dustCut.noteKill({ at: clock(), again, name: kill.k });
-            debug("kill: " + kill.k + (domain ? " in domain " + domain : " in no domain") +
-                (again ? " (came back before)" : "") + ", pending " + state.pending.length);
+            debug("kill: " + kill.k + where + (again ? " (came back before)" : "") + ", pending " + state.pending.length +
+                (trial.ok ? "" : ", marked: could not tell whether this is a broken bell trial (" + trial.error + ")"));
         }
     }
 
@@ -220,8 +231,20 @@ function startWith(api, modules) {
         const found = findDeathBell(player, center);
         const bell = found.bell;
         const bellIds = bell ? [bell.id, bell.actorName, bell.actorName && level + "|" + bell.actorName] : [];
+        // Kills made in the trial were never recorded. Those whose trial state could not be read were
+        // marked: they are made permanent here, and every other pending kill goes on as normal.
+        const trial = game.brokenBellTrial(player);
+        if (!trial.ok)
+            api.log("death: could not tell whether this is a broken bell trial (" + trial.error + ")");
+        else if (trial.value) {
+            const banked = Progress.bankMarked(state);
+            spawners.setMapAlive(ai, banked.map((e) => e.k), false);
+            api.log("death: in a broken bell trial (respawn bell " + (bell ? bell.id || bell.actorName : "unknown") + "), " +
+                banked.length + " marked kill(s) made permanent, the rest as normal");
+        }
         const matchBells = { partial: settings.get().useBellExceptionPartialId };
         if (bell && Progress.isListedAnyCase(settings.get().bellExceptions, matchBells, ...bellIds)) {
+            // Nothing comes back and pending kills become permanent, as in the base game.
             const banked = Progress.bankAll(state);
             spawners.setMapAlive(ai, banked.map((e) => e.k), false);
             save(player);
