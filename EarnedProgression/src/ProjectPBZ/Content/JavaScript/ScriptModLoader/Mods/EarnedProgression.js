@@ -105,21 +105,29 @@ function startWith(api, modules) {
         return spawners.loaded(ai).filter((s) => wanted.has(s.GetName()) && spawners.inDomainList(s, list));
     }
 
+    // The loaded spawner with this actor name, or undefined.
+    function findSpawner(player, name) {
+        const ai = game.aiSubsystem(player);
+        return ai ? spawners.loaded(ai).find((s) => s.GetName() === name) : undefined;
+    }
+
     function onKill(player, kill) {
         probe.kill(kill.k, Progress.isAgain(state, kill.k));
         if (Progress.isListed(settings.get().enemyExceptions, kill.k)) {
             debug("kill: " + kill.k + " is on the enemy exception list, not recorded");
             return;
         }
-        const excepted = inExceptedDomain(player, [kill.k]);
-        if (excepted.length > 0) {
-            debug("kill: " + kill.k + " is in domain " + spawners.domainName(excepted[0]) + " on the domain exception list, not recorded");
+        const spawner = findSpawner(player, kill.k);
+        const domain = spawner ? spawners.domainName(spawner) : "";
+        if (spawner && spawners.inDomainList(spawner, settings.get().domainExceptions)) {
+            debug("kill: " + kill.k + " is in domain " + domain + " on the domain exception list, not recorded");
             return;
         }
         const again = Progress.isAgain(state, kill.k);
         if (Progress.recordKill(state, kill)) {
             dustCut.noteKill({ at: clock(), again, name: kill.k });
-            debug("kill: " + kill.k + (again ? " (came back before)" : "") + ", pending " + state.pending.length);
+            debug("kill: " + kill.k + (domain ? " in domain " + domain : " in no domain") +
+                (again ? " (came back before)" : "") + ", pending " + state.pending.length);
         }
     }
 

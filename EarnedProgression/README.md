@@ -25,7 +25,7 @@ Back up your save before the first run. The mod stores its progress in the save 
 
 **Wave challenges.** Some fights are made of groups of enemies that the game releases in stages, one wave after the next. If the mod recorded those kills, a death partway through would bring every earlier wave back at once instead of in stages.
 
-The "Human-Faced Banyan Trees" are handled since 0.9.1. Their enemies belong to mob domains of the class `PBZ_MobDomain_C`, which is on the default `domainExceptions` list, so those kills are never recorded and a death there behaves as in the base game. This was checked in play on two of the challenges. Their respawn bells are also on the default `bellExceptions` list as a fallback.
+The respawn bells of the first two "Human-Faced Banyan Trees" are on the default `bellExceptions` list, so a death there brings nothing back. Matching their mob domain class (`PBZ_MobDomain_C`) turned out to be the wrong signal: the third tree uses an ordinary `BP_MobDomain_C`, and one level has 17 `PBZ_MobDomain_C` domains. The default `domainExceptions` list is empty for now.
 
 Other wave fights may not use that kind of domain, and the whole game has not been played through yet. Three lists can fix a fight that misbehaves:
 - `domainExceptions`: enemies in a matching mob domain are never recorded.
@@ -63,7 +63,7 @@ Other wave fights may not use that kind of domain, and the whole game has not be
 | `useBellExceptionPartialId` | `false` | `true` lets a `bellExceptions` entry match any part of a bell id, so `Brokenbell_` covers every bell whose id contains it. `false` needs the whole id. |
 | `bellExceptions` | the list `bellExceptionIds` in `Settings.js` | Bell ids. A death that respawns you at one of these brings nothing back and makes pending kills permanent. An id is the game's BellID (logged as `respawn bell <id>`), the bell's actor name, or `<level>\|<actor name>`. Case does not matter. The whole id must match unless `useBellExceptionPartialId` is on. Writing your own list replaces the default one. |
 | `enemyExceptions` | empty (the list `enemyExceptionIds` in `Settings.js`) | Spawner ids (the name printed after `kill:` in the log). These enemies are never recorded as kills. Writing your own list replaces the default one. |
-| `domainExceptions` | `["PBZ_MobDomain_C"]` | Parts of mob domain names. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry matches anywhere in the domain's actor name, ignoring case, so a class name covers every domain of that kind. Enemies in a matching domain are never recorded as kills. Not written to the default file, so the built-in list (`domainExceptionIds` in `Settings.js`) is used unless you add the key yourself. Writing your own list replaces the default one. |
+| `domainExceptions` | empty | Parts of mob domain names. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry matches anywhere in the domain's actor name, ignoring case, so a class name covers every domain of that kind. Enemies in a matching domain are never recorded as kills. Not written to the default file, so the built-in list (`domainExceptionIds` in `Settings.js`) is used unless you add the key yourself. Writing your own list replaces the default one. |
 
 A value that cannot be used falls back to its default and is logged once. Entries in the three lists are trimmed, blanks are dropped and repeats are ignored.
 
@@ -83,7 +83,7 @@ Look in `ScriptModLoader.log` (same folder). Every line from this mod starts wit
 | A death at an excepted bell | `death: respawning at an excepted bell (<name>), N kill(s) made permanent` |
 | A death where the bell is not found | `death: could not tell which bell you respawn at (<reason>), reviving as normal` |
 | A rest | `rest at <level>\|<bell>: new bell, N kill(s) made permanent` or `known bell, nothing changes` |
-| Kills (`debugLog` true, the default) | `kill: <spawner> ...` for each enemy you kill |
+| Kills (`debugLog` true, the default) | `kill: <spawner> in domain <name>, pending N` for each enemy you kill (`in no domain` when the spawner has none; `(came back before)` before the count for an enemy that came back) |
 | A kill in an excepted domain (`debugLog` true) | `kill: <spawner> is in domain <name> on the domain exception list, not recorded` |
 | The Dust cut (`debugLog` true, the default) | `dust: <spawner> gave N, M taken back` |
 

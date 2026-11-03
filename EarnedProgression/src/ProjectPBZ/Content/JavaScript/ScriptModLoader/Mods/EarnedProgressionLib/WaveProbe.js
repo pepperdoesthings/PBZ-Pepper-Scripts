@@ -285,6 +285,42 @@ function createWaveProbe(deps) {
         }
     }
 
+    // The group names in a domain's config (MobDomainConfig.MobGroups is a map keyed by group name),
+    // or undefined when the config cannot be read.
+    function configGroupNames(domain) {
+        try {
+            const groups = domain.MobDomainConfig.MobGroups;
+            if (!groups || typeof groups.Num !== "function")
+                return undefined;
+            return items(groups).map((e) => (e && e.key !== undefined ? text(e.key) : text(e)));
+        }
+        catch (e) {
+            return undefined;
+        }
+    }
+
+    // One line per domain with its group names, then a count per class of single-DefaultGroup
+    // domains against domains with several groups. Wave fights seen so far have several groups.
+    function logAllGroups() {
+        const tally = new Map();
+        for (const [name, d] of domains) {
+            const cls = classOf(d);
+            const groups = configGroupNames(d);
+            log("groups " + name + " (" + cls + "): " + (groups ? groups.length + " [" + groups.join(", ") + "]" : "unreadable"));
+            if (!tally.has(cls))
+                tally.set(cls, { single: 0, several: 0 });
+            const t = tally.get(cls);
+            if (groups && groups.length === 1 && groups[0] === "DefaultGroup")
+                t.single++;
+            else if (groups && groups.length > 1)
+                t.several++;
+        }
+        if (tally.size > 0) {
+            log("group summary: " + [...tally].sort((a, b) => (a[0] < b[0] ? -1 : 1))
+                .map(([cls, t]) => cls + " " + t.single + " single DefaultGroup, " + t.several + " with several groups").join("; "));
+        }
+    }
+
     function snapshot(domain) {
         const lines = new Map();
         lines.set("domain", quiet(() => domainState(domain), "unreadable"));
@@ -471,6 +507,7 @@ function createWaveProbe(deps) {
                     ordinary++;
                 guard("probe describe", () => describeDomain(d, pbz ? "domain" : "sample domain"));
             }
+            guard("probe groups", logAllGroups);
             const sub = persistence();
             log("MobGroupCombatPersistenceSubsystem: " + (quiet(() => UE.MobGroupCombatPersistenceSubsystem) ? (sub ? "found" : "class known, no instance") : "class not exposed"));
             if (sub)

@@ -7,9 +7,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bellExceptionIds = [
     "Brokenbell_FujiDaronngshu",
     "Brokenbell_HouJieDaronngshu",
-    "BP_BrokenBell_C_UAID_E89C25A7512053C502_1432849353",
-    "BP_WoodenFrameBell_C_2147475504",
-    "BP_WoodenFrameBell_C_2147475609",
 ];
 
 // Spawners whose kills are never recorded, so they never come back. Add a spawner's actor name
@@ -33,7 +30,7 @@ const enemyExceptionIds = [
 // entry matches any part of the domain actor's name, ignoring case, so a class name such as
 // "PBZ_MobDomain_C" covers every domain of that kind. The domain is printed after "kill:" in the log.
 const domainExceptionIds = [
-    "PBZ_MobDomain_C",
+    // "PBZ_MobDomain_C",
 ];
 
 const DEFAULTS = Object.freeze({
