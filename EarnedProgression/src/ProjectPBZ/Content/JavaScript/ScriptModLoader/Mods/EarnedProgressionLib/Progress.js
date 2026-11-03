@@ -13,10 +13,19 @@ function isNumber(value) {
     return typeof value === "number" && Number.isFinite(value);
 }
 
-// A kill: k = key of the spawner in the game's save map, l = level name, x/y/z = spawner position.
+// A kill: k = key of the spawner in the game's save map, l = level name, x/y/z = spawner position,
+// and t = true when the kill may have been made in a broken bell trial (the state could not be read).
 function validKill(e) {
     return !!e && typeof e === "object" && typeof e.k === "string" && e.k.length > 0 &&
         typeof e.l === "string" && isNumber(e.x) && isNumber(e.y) && isNumber(e.z);
+}
+
+// The stored form of a valid kill: only known fields, and the mark only when it is true.
+function entryOf(e) {
+    const entry = { k: e.k, l: e.l, x: e.x, y: e.y, z: e.z };
+    if (e.t === true)
+        entry.t = true;
+    return entry;
 }
 
 // raw is whatever the save held for this mod. Returns { state, problem }; problem is a sentence
@@ -34,7 +43,7 @@ function load(raw) {
     for (const e of raw.pending) {
         if (validKill(e) && !seenKills.has(e.k)) {
             seenKills.add(e.k);
-            state.pending.push({ k: e.k, l: e.l, x: e.x, y: e.y, z: e.z });
+            state.pending.push(entryOf(e));
         }
         else
             dropped++;
@@ -54,7 +63,7 @@ function load(raw) {
 function recordKill(state, kill) {
     if (!validKill(kill) || state.pending.some((e) => e.k === kill.k))
         return false;
-    state.pending.push({ k: kill.k, l: kill.l, x: kill.x, y: kill.y, z: kill.z });
+    state.pending.push(entryOf(kill));
     return true;
 }
 
@@ -91,6 +100,16 @@ function splitForDeath(state, ctx) {
 function bankAll(state) {
     const banked = state.pending;
     state.pending = [];
+    const keys = new Set(banked.map((e) => e.k));
+    state.again = state.again.filter((k) => !keys.has(k));
+    return banked;
+}
+
+// Makes the marked pending kills (t: true) permanent: they leave pending and again. The rest stay
+// pending. Returns the kills made permanent.
+function bankMarked(state) {
+    const banked = state.pending.filter((e) => e.t === true);
+    state.pending = state.pending.filter((e) => e.t !== true);
     const keys = new Set(banked.map((e) => e.k));
     state.again = state.again.filter((k) => !keys.has(k));
     return banked;
@@ -170,6 +189,7 @@ exports.isAgain = isAgain;
 exports.inSafeZone = inSafeZone;
 exports.splitForDeath = splitForDeath;
 exports.bankAll = bankAll;
+exports.bankMarked = bankMarked;
 exports.bankAtBell = bankAtBell;
 exports.isListed = isListed;
 exports.isListedAnyCase = isListedAnyCase;
