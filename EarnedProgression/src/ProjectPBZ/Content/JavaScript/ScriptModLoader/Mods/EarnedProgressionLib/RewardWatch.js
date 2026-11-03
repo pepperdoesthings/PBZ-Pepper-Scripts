@@ -198,11 +198,20 @@ function createRewardWatch(deps) {
         windows = [];
     }
 
+    // Remembers each group's status as of now. The game records a reward the moment the last enemy
+    // dies, which can be before the kill watch reports that kill, so a clear is judged by the status
+    // from the look before it, never by the list at the time the kill is seen.
+    function remember(done) {
+        for (const g of groups.values())
+            g.wasGiven = done.has(g.key);
+    }
+
     function ready(player) {
         stop();
         ctx = player;
         const found = scan();
         const done = given();
+        remember(done);
         const open = found.filter((g) => !done.has(g.key)).length;
         log(found.length + " reward group(s) found, " + open + " not given yet");
         describe(found, done);
@@ -236,6 +245,8 @@ function createRewardWatch(deps) {
             if (found.length)
                 describe(found, given());
         }
+        if (groups.size)
+            remember(given());
         checkNear(player);
         // The game's tip shows one line at a time, so a clear result goes out last and is not covered.
         const due = windows.filter((w) => now - w.at >= WINDOW_MS);
@@ -263,17 +274,17 @@ function createRewardWatch(deps) {
         const mine = [...groups.values()].filter((g) => g.members.includes(name));
         if (!mine.length)
             return;
-        const done = given();
         for (const g of mine) {
+            const was = g.wasGiven ? "given before" : "not given yet";
             g.killed.add(name);
             const left = g.members.filter((m) => !g.killed.has(m)).length;
             if (left > 0) {
-                log("kill " + name + " in reward group " + g.id + " (" + status(g, done) + "), " + left + " of " + g.members.length + " left");
+                log("kill " + name + " in reward group " + g.id + " (" + was + "), " + left + " of " + g.members.length + " left");
                 continue;
             }
             g.killed = new Set();
-            log("cleared " + g.id + " (" + status(g, done) + "), watching items for 10 s");
-            windows.push({ g, at: clock(), wasGiven: done.has(g.key), items: [] });
+            log("cleared " + g.id + " (" + was + "), watching items for 10 s");
+            windows.push({ g, at: clock(), wasGiven: !!g.wasGiven, items: [] });
         }
     }
 
