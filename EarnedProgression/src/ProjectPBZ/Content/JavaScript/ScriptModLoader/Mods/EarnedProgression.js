@@ -31,7 +31,16 @@ function gameModules() {
         RenewalPlayer: require("../../Gameplay/RenewalPlayer").RenewalPlayerinXinInterface,
         DustTips: require("../../UI/Widget/Foundation/DustTips").PBZUpdateDustWidgetInterface,
         timers: { setInterval, clearInterval, setTimeout },
+        showText: gameShowText,
     };
+}
+
+// The game's one-line tip with our own text (UIHelper.showTipsText). Loaded on first use, so a
+// failure only affects the messages.
+function gameShowText(ctx, text) {
+    const cpp = require("cpp");
+    const UIHelper = require("../../Library/UIHelper").default;
+    UIHelper.showTipsText(ctx, cpp.FText.FromString(text));
 }
 
 function start(api, modules) {
@@ -72,6 +81,26 @@ function startWith(api, modules) {
         death(names) { if (probing) waveProbe.death(names); },
         respawned() { if (probing) waveProbe.respawned(); },
     };
+
+    // A message in the game's one-line tip. A failure is logged once, then messages are skipped.
+    let screenBroken = false;
+    function showMessage(ctx, text) {
+        if (screenBroken || !modules.showText)
+            return;
+        try {
+            modules.showText(ctx, text);
+        }
+        catch (e) {
+            screenBroken = true;
+            api.log("on-screen message failed: " + (e && e.message ? e.message : e) + "; no more on-screen messages this session");
+        }
+    }
+
+    function newBellText(count) {
+        if (count === 0)
+            return "New bell reached. No pending kills to keep.";
+        return "New bell reached. " + count + (count === 1 ? " enemy" : " enemies") + " will stay dead.";
+    }
 
     let state = Progress.emptyState();
     let watch;
@@ -286,6 +315,8 @@ function startWith(api, modules) {
         if (result.newBell) {
             spawners.setMapAlive(ai, result.banked.map((e) => e.k), false);
             save(player);
+            if (settings.get().newBellMessage)
+                showMessage(player, newBellText(result.banked.length));
         }
         let bellId = "";
         try {
