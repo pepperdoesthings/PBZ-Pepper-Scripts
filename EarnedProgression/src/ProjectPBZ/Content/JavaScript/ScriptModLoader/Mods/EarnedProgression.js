@@ -10,6 +10,7 @@ const { createSettings } = require("./EarnedProgressionLib/Settings");
 const { createDustCut, cutFor } = require("./EarnedProgressionLib/DustCut");
 const Progress = require("./EarnedProgressionLib/Progress");
 const { createWaveProbe } = require("./EarnedProgressionLib/WaveProbe");
+const { createRewardWatch } = require("./EarnedProgressionLib/RewardWatch");
 
 const VERSION = "0.9.2";
 const SETTINGS_FILE = "EarnedProgression.json";
@@ -31,7 +32,16 @@ function gameModules() {
         RenewalPlayer: require("../../Gameplay/RenewalPlayer").RenewalPlayerinXinInterface,
         DustTips: require("../../UI/Widget/Foundation/DustTips").PBZUpdateDustWidgetInterface,
         timers: { setInterval, clearInterval, setTimeout },
+        showText: gameShowText,
     };
+}
+
+// The game's one-line tip with our own text (UIHelper.showTipsText). Loaded on first use, so a
+// failure only affects the debug messages.
+function gameShowText(ctx, text) {
+    const cpp = require("cpp");
+    const UIHelper = require("../../Library/UIHelper").default;
+    UIHelper.showTipsText(ctx, cpp.FText.FromString(text));
 }
 
 function start(api, modules) {
@@ -59,18 +69,64 @@ function startWith(api, modules) {
     // Diagnostic logging of mob domains, waves and item gains, only while debugWaveProbe is on. It is
     // turned on or off at a level load; the kill, death and respawn lines follow that choice.
     const waveProbe = createWaveProbe({ UE, puerts, tsHelper, game, spawners, timers, clock, log: (t) => api.log("probe: " + t) });
+    // An on-screen copy of a debug line, only with debugOnScreen on. A failure is logged once.
+    let screenBroken = false;
+    function showOnScreen(ctx, text) {
+        if (!settings.get().debugOnScreen || screenBroken || !modules.showText)
+            return;
+        try {
+            modules.showText(ctx, text);
+        }
+        catch (e) {
+            screenBroken = true;
+            api.log("on-screen message failed: " + (e && e.message ? e.message : e) + "; debug lines go to the log only");
+        }
+    }
+    const rewardWatch = createRewardWatch({
+        UE, puerts, tsHelper, game, clock,
+        spawnersNow: (ctx) => {
+            const ai = game.aiSubsystem(ctx);
+            return ai ? spawners.loaded(ai) : [];
+        },
+        log: (t) => api.log("rewards: " + t),
+        show: showOnScreen,
+    });
     let probing = false;
+    // Every entry point catches its own errors: a diagnostic must never stop the mod's own work.
+    function guarded(label, fn) {
+        try {
+            fn();
+        }
+        catch (e) {
+            api.log(label + " failed: " + (e && e.message ? e.message : e));
+        }
+    }
     const probe = {
         ready(player) {
             probing = settings.get().debugWaveProbe;
-            if (probing)
+            if (probing) {
                 waveProbe.ready(player);
-            else
+                guarded("reward watch", () => rewardWatch.ready(player));
+            }
+            else {
                 waveProbe.stop();
+                rewardWatch.stop();
+            }
         },
-        kill(name, again) { if (probing) waveProbe.kill(name, again); },
-        death(names) { if (probing) waveProbe.death(names); },
+        kill(name, again) {
+            if (!probing)
+                return;
+            waveProbe.kill(name, again);
+            guarded("reward watch", () => rewardWatch.kill(name));
+        },
+        death(names) {
+            if (!probing)
+                return;
+            waveProbe.death(names);
+            guarded("reward watch", () => rewardWatch.death());
+        },
         respawned() { if (probing) waveProbe.respawned(); },
+        tick(player) { if (probing) guarded("reward watch", () => rewardWatch.tick(player)); },
     };
 
     let state = Progress.emptyState();
@@ -165,6 +221,7 @@ function startWith(api, modules) {
                     api.log("dropped " + dropped + " pending kill(s) of enemies that are on the exception list");
                 if (kills.tick(player) > 0 || dropped > 0)
                     save(player);
+                probe.tick(player);
             }
             catch (e) {
                 api.log("kill watch failed: " + (e && e.message ? e.message : e));

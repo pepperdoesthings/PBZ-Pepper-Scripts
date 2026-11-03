@@ -39,6 +39,7 @@ const DEFAULTS = Object.freeze({
     respawnDust: 25,
     debugLog: true,
     debugWaveProbe: false,
+    debugOnScreen: false,
     bellProximityFallback: false,
     useBellExceptionPartialId: false,
     bellExceptions: Object.freeze([...bellExceptionIds]),
@@ -46,7 +47,7 @@ const DEFAULTS = Object.freeze({
     domainExceptions: Object.freeze([...domainExceptionIds]),
 });
 const LISTS = ["bellExceptions", "enemyExceptions", "domainExceptions"];
-const SWITCHES = ["debugLog", "debugWaveProbe", "bellProximityFallback", "useBellExceptionPartialId"];
+const SWITCHES = ["debugLog", "debugWaveProbe", "debugOnScreen", "bellProximityFallback", "useBellExceptionPartialId"];
 const RELOAD_MS = 2000;
 
 function isNumber(value) {

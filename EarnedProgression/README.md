@@ -36,6 +36,18 @@ Wave fights that are not broken bell trials may still misbehave, and the whole g
 
 **Helping fix it.** The log is on by default. If a fight misbehaves after a death, open `ScriptModLoader.log` right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. Setting `debugWaveProbe` to `true` also logs each kill's mob domain and group. You can put the ids in your own `EarnedProgression.json` (see "Settings") to fix it on your machine.
 
+**Group rewards.** Some mob groups give an item once when the whole group is cleared, such as the Sha-Chi Amber Fragments (a `MobGroupScript_AddItemAfterCombat` script on the group). The game records each reward it gave. Whether clearing such a group again, after the mod brought it back, gives the item again is not known yet. With `debugWaveProbe` on, the mod watches for it:
+
+| Event | Log line (`EarnedProgression: rewards: ...`) | On screen (`debugOnScreen`) |
+|---|---|---|
+| Level load | `N reward group(s) found, M not given yet`, then one `group <domain>\|<group> (<script>) at <x y z>, given before\|not given yet, enemies ...` line each | `EP: N reward group(s) here, M not given yet` |
+| Within 50 m of one, once per group until the next death | `nearby: <domain>\|<group>, <m> m, given before\|not given yet` | `EP: reward group nearby (...), N enemies` |
+| Kill in such a group | `kill <spawner> in reward group <domain>\|<group> (...), N of M left` | - |
+| The last enemy dies | `cleared <domain>\|<group> (...), watching items for 10 s` | - |
+| 10 s later | `result ...: first clear, ...`, `cleared again, items in 10 s: ... (reward given again?)` or `cleared again, no item in 10 s (the game did not repeat the reward)` | `EP: reward group cleared ...` |
+
+A `cleared again` result with an item is the case worth sending in: it means the game gave the reward twice. Any item gained in those 10 s counts, so an item picked up from the ground at the same time shows up too.
+
 ## Install
 1. Install **ScriptModLoader 1.1.0 or newer** first (see its README). Remove any other mod that replaces `WeaponNormalTextEntry.js`, such as Phantom Souls or Movement Speed. It does not work together with Phantom Souls, which has its own respawn rules.
 2. Build this pack: `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`. The files appear in `EarnedProgression\dist\`.
@@ -60,7 +72,8 @@ Wave fights that are not broken bell trials may still misbehave, and the whole g
 | `bellSafeRadius` | `1000` | Centimetres (1000 = 10 m). Pending kills this close to the respawn bell are not brought back. `0` turns the safe zone off. |
 | `respawnDust` | `25` | Percent of its Dust that an enemy gives when it is killed again after coming back. 0 to 100. `100` means full Dust. |
 | `debugLog` | `true` | `true` adds a log line for each kill and Dust cut. On by default so that the ids needed for the exception lists are always in the log. Set `false` for a quieter log. |
-| `debugWaveProbe` | `false` | `true` adds diagnostic `probe:` lines: the level's mob domains, the domain and group of each kill, wave state at each death and respawn, and every item gained with the last kill before it. Read at each level load. Makes the log much longer. |
+| `debugWaveProbe` | `false` | `true` adds diagnostic `probe:` lines: the level's mob domains, the domain and group of each kill, wave state at each death and respawn, and every item gained with the last kill before it. It also adds `rewards:` lines about the mob groups that give an item when cleared (see below). Read at each level load. Makes the log much longer. |
+| `debugOnScreen` | `false` | With `debugWaveProbe` also `true`, shows the `rewards:` messages in the game as a one-line tip, starting with `EP:`. If the game cannot show them, the log says `on-screen message failed` once and they go to the log only. |
 | `bellProximityFallback` | `false` | `true` uses the bell actor nearest to the respawn point when the game has no respawn bell set. Off by default because it can pick the wrong actor. |
 | `useBellExceptionPartialId` | `false` | `true` lets a `bellExceptions` entry match any part of a bell id, so `Brokenbell_` covers every bell whose id contains it. `false` needs the whole id. |
 | `bellExceptions` | the list `bellExceptionIds` in `Settings.js` | Bell ids. A death that respawns you at one of these brings nothing back and makes pending kills permanent. An id is the game's BellID (logged as `respawn bell <id>`), the bell's actor name, or `<level>\|<actor name>`. Case does not matter. The whole id must match unless `useBellExceptionPartialId` is on. Writing your own list replaces the default one. |
@@ -105,7 +118,7 @@ If the log never mentions `EarnedProgression`, ScriptModLoader did not start the
 
 ## Files
 - `Mods/EarnedProgression.js`: the plugin.
-- `Mods/EarnedProgressionLib/`: `Settings`, `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the code that touches game objects), and `WaveProbe` (diagnostic logging, only while `debugWaveProbe` is on; it only reads).
+- `Mods/EarnedProgressionLib/`: `Settings`, `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the code that touches game objects), and `WaveProbe` and `RewardWatch` (diagnostic logging, only while `debugWaveProbe` is on; they only read).
 
 ## Credits
 - The approach is based on PVLW's Phantom Souls mod, whose author allows reuse with credit: how enemies are brought back around the death screen, the kill watch, the codex-based boss test, and the Dust pop-up cut. The code is re-implemented here.
