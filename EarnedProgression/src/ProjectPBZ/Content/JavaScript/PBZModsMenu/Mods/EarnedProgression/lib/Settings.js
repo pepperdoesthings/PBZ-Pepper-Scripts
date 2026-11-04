@@ -131,7 +131,7 @@ const MENU_FILE = "EarnedProgression.txt";
 // The settings Mods Menu shows and writes to MENU_FILE. Ranges and steps match the menu's rows (Menu.js).
 const MENU_SETTINGS = Object.freeze([
     Object.freeze({ key: "respawnDust", type: "number", min: 0, max: 100, step: 5 }),
-    Object.freeze({ key: "bellSafeRadius", type: "number", min: 0, max: 20000, step: 100 }),
+    Object.freeze({ key: "bellSafeRadius", type: "number", min: 0, max: 2000, step: 100 }),
     Object.freeze({ key: "newBellMessage", type: "toggle" }),
     Object.freeze({ key: "debugLog", type: "toggle" }),
 ]);

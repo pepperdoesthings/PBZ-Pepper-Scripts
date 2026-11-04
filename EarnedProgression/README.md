@@ -53,7 +53,7 @@ Wave fights that are not broken bell trials may still misbehave, and the whole g
 | Row | Key | Range |
 |---|---|---|
 | Respawned Enemy Dust Percentage | `respawnDust` | 0 to 100, in steps of 5 |
-| Avoid Spawning near bell | `bellSafeRadius` | 0 to 20000 cm, in steps of 100 |
+| Avoid Spawning near bell | `bellSafeRadius` | 0 to 2000 cm, in steps of 100 |
 | Show Message When Reaching New Bell | `newBellMessage` | On / Off |
 | Debug Log | `debugLog` | On / Off |
 
@@ -61,7 +61,7 @@ Mods Menu saves them to `ProjectPBZ/Content/Paks/~mods/EarnedProgression.txt` (`
 
 **By hand.** Every setting below can be set in `ProjectPBZ/Content/Paks/~mods/EarnedProgression.json`. The mod never creates this file; write it yourself, with only the keys you want, for example `{ "enemyExceptions": ["BP_AISpawner_C_5"] }`. **A key in the JSON wins over the menu**, and that menu row then shows a warning naming the file. Remove the key from the JSON to use the menu again.
 
-Moving from an older version: on the first start without an `EarnedProgression.txt`, the mod moves the four menu settings out of an existing `EarnedProgression.json` into a new `EarnedProgression.txt`, once, and logs `settings: moved ...`. The rest of the JSON stays. A value the menu cannot show (a radius over 20000, say) stays in the JSON.
+Moving from an older version: on the first start without an `EarnedProgression.txt`, the mod moves the four menu settings out of an existing `EarnedProgression.json` into a new `EarnedProgression.txt`, once, and logs `settings: moved ...`. The rest of the JSON stays. A value the menu cannot show (a radius over 2000, say) stays in the JSON.
 
 Both files are re-read about every 2 seconds. With neither file, the defaults below apply.
 
