@@ -6,13 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const { createGame, TAG_DEAD } = require("./lib/Game");
 const { createSpawners } = require("./lib/Spawners");
 const { createKills } = require("./lib/Kills");
-const { createSettings } = require("./lib/Settings");
+const { createSettings, JSON_FILE, MENU_FILE } = require("./lib/Settings");
+const Menu = require("./lib/Menu");
 const { createDustCut, cutFor } = require("./lib/DustCut");
 const Progress = require("./lib/Progress");
 const { createWaveProbe } = require("./lib/WaveProbe");
 
-const VERSION = "0.10.0";
-const SETTINGS_FILE = "EarnedProgression.json";
+const VERSION = "0.10.1";
 const KILL_TICK_MS = 500;
 // A bell counts as the one the player respawns at when it is this close (cm) to the respawn point.
 const BELL_MATCH_CM = 1000;
@@ -51,7 +51,8 @@ function startWith(api, modules) {
     const { UE, puerts, tsHelper, RenewalPlayer, DustTips, timers } = modules;
     const clock = modules.clock || (() => Date.now());
     const settings = createSettings({
-        path: api.settingsPath(SETTINGS_FILE),
+        jsonPath: api.settingsPath(JSON_FILE),
+        menuPath: api.settingsPath(MENU_FILE),
         readText: api.readText,
         writeText: api.writeText,
         clock,
@@ -392,6 +393,7 @@ function startWith(api, modules) {
     api.wrap(DustTips, "DustTips", "enqueueDustChange", (self, args) => onDustGain(self, args));
 
     api.log("started " + VERSION + ": bellSafeRadius " + settings.get().bellSafeRadius + ", respawnDust " + settings.get().respawnDust);
+    Menu.register(modules.host || globalThis, settings, VERSION, api.log);
 }
 
 exports.VERSION = VERSION;

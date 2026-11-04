@@ -5,7 +5,7 @@ A script mod for Phantom Blade Zero (needs [Mods Menu](https://www.nexusmods.com
 Offline single-player only. The game build it was last checked against is in `TESTED_BUILD.txt` in the repository root.
 
 ## Status
-Version 0.10.0, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
+Version 0.10.1, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
 
 Back up your save before the first run. The mod stores its progress in the save under the section name `EarnedProgression`. What the game does with that section if you later remove the mod is untested.
 
@@ -34,20 +34,36 @@ Wave fights that are not broken bell trials may still misbehave, and the whole g
 - `bellExceptions`: if the bell you respawn at is on this list, nothing comes back on that death.
 - `enemyExceptions`: spawners on this list are never recorded, so they never come back.
 
-**Helping fix it.** The log is on by default. If a fight misbehaves after a death, open `EarnedProgression.log` (in `~mods`) right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. Setting `debugWaveProbe` to `true` also logs each kill's mob domain and group. You can put the ids in your own `EarnedProgression.json` (see "Settings") to fix it on your machine.
+**Helping fix it.** The log is on by default. If a fight misbehaves after a death, open `EarnedProgression.log` (in `~mods`) right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. Setting `debugWaveProbe` to `true` also logs each kill's mob domain and group. You can put the ids in an `EarnedProgression.json` of your own (see "Settings") to fix it on your machine.
 
 ## Install
 1. Install **Mods Menu 0.5.4 or newer** from its [Nexus page](https://www.nexusmods.com/phantombladezero/mods/149), following its README. It does not work together with Phantom Souls, which has its own respawn rules.
 2. Build: `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`. The files appear in `EarnedProgression\dist\ProjectPBZ\`.
-3. Copy that `ProjectPBZ` folder into the game's root folder. This adds `ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression\` and `ProjectPBZ\Content\Paks\~mods\EarnedProgression.json` (the default settings; the mod also writes it itself if it is missing). Copying it over an existing one replaces your own settings.
+3. Copy that `ProjectPBZ` folder into the game's root folder. This adds `ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression\`. It holds no settings file, so copying never replaces yours.
 4. Start the game. `EarnedProgression.log` appears in `~mods`.
 
-**Updating from 0.9.x:** delete `zzz_PBZ_ScriptModLoader_P` and `zzz_PBZ_SMLEarnedProgression_P` (`.pak`, `.utoc`, `.ucas` each), `ScriptModLoader.json` and `ScriptModLoader.log` from `~mods`. Since game build 26367565 the old loader stops the game at the title screen. Your settings and save carry over.
+**Updating from 0.9.x:** delete `zzz_PBZ_ScriptModLoader_P` and `zzz_PBZ_SMLEarnedProgression_P` (`.pak`, `.utoc`, `.ucas` each), `ScriptModLoader.json` and `ScriptModLoader.log` from `~mods`. Since game build 26367565 the old loader stops the game at the title screen. Keep `EarnedProgression.json`: on the first start the mod moves its four menu settings into `EarnedProgression.txt` (see "Settings"). Your save carries over.
 
 **Turning it off** without deleting it: add `EarnedProgression=0` under `[Mods]` in `~mods\PBZModsMenuLoader.txt` (Mods Menu's switch file).
 
 ## Settings
-`ProjectPBZ/Content/Paks/~mods/EarnedProgression.json`, re-read about every 2 seconds:
+
+**In the game.** Settings > the Mods Menu tab (two gears; F9 during play) > Earned Progression has four rows. A change applies at once, no restart:
+
+| Row | Key | Range |
+|---|---|---|
+| Respawned Enemy Dust Percentage | `respawnDust` | 0 to 100, in steps of 5 |
+| Avoid Spawning near bell | `bellSafeRadius` | 0 to 20000 cm, in steps of 100 |
+| Show Message When Reaching New Bell | `newBellMessage` | On / Off |
+| Debug Log | `debugLog` | On / Off |
+
+Mods Menu saves them to `ProjectPBZ/Content/Paks/~mods/EarnedProgression.txt` (`key=value` lines; you can edit it by hand too). The file appears the first time you change a row.
+
+**By hand.** Every setting below can be set in `ProjectPBZ/Content/Paks/~mods/EarnedProgression.json`. The mod never creates this file; write it yourself, with only the keys you want, for example `{ "enemyExceptions": ["BP_AISpawner_C_5"] }`. **A key in the JSON wins over the menu**, and that menu row then shows a warning naming the file. Remove the key from the JSON to use the menu again.
+
+Moving from an older version: on the first start without an `EarnedProgression.txt`, the mod moves the four menu settings out of an existing `EarnedProgression.json` into a new `EarnedProgression.txt`, once, and logs `settings: moved ...`. The rest of the JSON stays. A value the menu cannot show (a radius over 20000, say) stays in the JSON.
+
+Both files are re-read about every 2 seconds. With neither file, the defaults below apply.
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -60,11 +76,11 @@ Wave fights that are not broken bell trials may still misbehave, and the whole g
 | `newBellMessage` | `true` | At a rest at a new bell, shows "New bell reached. N enemies will stay dead." in the game's one-line tip ("No pending kills to keep." when there were none). If the game cannot show it, the log says `on-screen message failed` once. |
 | `bellExceptions` | the list `bellExceptionIds` in `Settings.js` | Bell ids. A death that respawns you at one of these brings nothing back and makes pending kills permanent. An id is the game's BellID (logged as `respawn bell <id>`), the bell's actor name, or `<level>\|<actor name>`. Case does not matter. The whole id must match unless `useBellExceptionPartialId` is on. Writing your own list replaces the default one. |
 | `enemyExceptions` | empty (the list `enemyExceptionIds` in `Settings.js`) | Spawner ids (the name printed after `kill:` in the log). These enemies are never recorded as kills. Writing your own list replaces the default one. |
-| `domainExceptions` | empty | Parts of mob domain names. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry matches anywhere in the domain's actor name, ignoring case, so a class name covers every domain of that kind. Enemies in a matching domain are never recorded as kills. Not written to the default file, so the built-in list (`domainExceptionIds` in `Settings.js`) is used unless you add the key yourself. Writing your own list replaces the default one. |
+| `domainExceptions` | empty | Parts of mob domain names. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry matches anywhere in the domain's actor name, ignoring case, so a class name covers every domain of that kind. Enemies in a matching domain are never recorded as kills. The built-in list is `domainExceptionIds` in `Settings.js`. Writing your own list replaces the default one. |
 
-A value that cannot be used falls back to its default and is logged once. Entries in the three lists are trimmed, blanks are dropped and repeats are ignored.
+A value that cannot be used falls back to the menu's value or the default and is logged once. A number in `EarnedProgression.txt` outside the row's range is clamped to it. Entries in the three lists are trimmed, blanks are dropped and repeats are ignored.
 
-**Finding ids.** Every death logs `death: respawn bell <BellID> (actor <actor name>)`, and every rest ends with `; bell id <BellID>`. Either id works in `bellExceptions`; the BellID is the one the game itself uses. With `debugLog` on (the default) every kill logs a `kill: <spawner>` line; that name is the id for `enemyExceptions`. The file is re-read about every 2 seconds, so you can add ids while the game runs.
+**Finding ids.** Every death logs `death: respawn bell <BellID> (actor <actor name>)`, and every rest ends with `; bell id <BellID>`. Either id works in `bellExceptions`; the BellID is the one the game itself uses. With `debugLog` on (the default) every kill logs a `kill: <spawner>` line; that name is the id for `enemyExceptions`. The JSON is re-read about every 2 seconds, so you can add ids while the game runs.
 
 **How the death bell is found.** The mod does not use the last bell you rested at, because the game can change your current bell without a rest. At each death it asks the game which bell it will respawn you at, with the same two calls the game's own death code makes (`PBZGameSystem.GetSaveActorID`, then `GetSaveActorByID` for the actor). If the game has no bell set (it reports `None`, for example after a map teleport or a story respawn point), the log says `could not tell which bell you respawn at (the game has no respawn bell set)` and the death revives as normal, unless `bellProximityFallback` is on.
 
@@ -73,7 +89,9 @@ Look in `EarnedProgression.log` in `~mods`. Mods Menu's own line for the mod is 
 
 | Check | What you should see |
 |---|---|
-| The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.0: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
+| The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.1: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
+| The menu section | `menu: registered with Mods Menu`, and an Earned Progression section on the Mods Menu tab |
+| An older JSON on the first start | `settings: moved respawnDust, bellSafeRadius, newBellMessage, debugLog from EarnedProgression.json to EarnedProgression.txt (Mods Menu now changes them)` (only the keys the JSON had) |
 | A level is ready | `ready on <level>: N pending, M known bells` |
 | A death | `death: respawn bell <BellID> (actor <name>)`, then `death: N kill(s) coming back, M kept dead near the bell` and `respawn: N spawned` |
 | A rest | the usual `rest at ...` line, ending with `; bell id <BellID>` |
@@ -101,7 +119,7 @@ If `EarnedProgression.log` never appears, Mods Menu did not start the mod: `PBZM
 ## Files
 - `main.js`: the entry Mods Menu loads. It hands the game's modules to `lib/Boot.js`.
 - `EarnedProgression.js`: the mod.
-- `lib/`: `Api` and `Boot` (log file, method hooks, settings files, start-up), `Settings`, `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the code that touches game objects), and `WaveProbe` (diagnostic logging, only while `debugWaveProbe` is on; it only reads).
+- `lib/`: `Api` and `Boot` (log file, method hooks, settings files, start-up), `Menu` (the section in Mods Menu), `Settings` (the two settings files), `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the code that touches game objects), and `WaveProbe` (diagnostic logging, only while `debugWaveProbe` is on; it only reads).
 
 ## Credits
 - The approach is based on PVLW's Phantom Souls mod, whose author allows reuse with credit: how enemies are brought back around the death screen, the kill watch, the codex-based boss test, and the Dust pop-up cut. The code is re-implemented here.

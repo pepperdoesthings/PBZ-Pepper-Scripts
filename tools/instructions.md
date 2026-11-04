@@ -158,8 +158,9 @@ Steps, in order, stopping at the first failure:
 1. `node --check` on every `.js` file in `src` and `tests`.
 2. The offline tests (`node --test "tests/*.test.js"`).
 3. Copies `src\ProjectPBZ` to `dist\ProjectPBZ`.
-4. Writes `dist\ProjectPBZ\Content\Paks\~mods\EarnedProgression.json` by calling the mod's own `defaultsText()` in `lib/Settings.js`, so it is the same text the mod writes when the file is missing, and checks that it is valid JSON.
-5. Compares every copied script with `src` byte for byte.
+4. Compares every copied script with `src` byte for byte.
+
+It writes no settings file: Mods Menu creates `EarnedProgression.txt` when a value is changed, and `EarnedProgression.json` is only for players who write one by hand.
 
 Prints `BUILD OK` and exits 0, or `BUILD FAILED: <reason>` and exits 1. Checked by breaking a test: the build stopped. It does not install anything into the game folder.
 
@@ -174,6 +175,6 @@ powershell -ExecutionPolicy Bypass -File tools\build-all.ps1
 1. Runs each mod's `build.ps1` (the `$mods` list at the top; today only `EarnedProgression`).
 2. Deletes `dist\ProjectPBZ` and rebuilds it from the mods' `dist\ProjectPBZ` folders, so a file a mod no longer has does not linger. Fails if two mods write the same file. Compares every copy with its source by hash.
 
-Copying `dist\ProjectPBZ` over a game folder replaces the player's own `EarnedProgression.json`, so skip that file when updating. If a build or test fails, `dist` is not touched. Prints `BUILD-ALL OK` and exits 0, or `BUILD-ALL FAILED: <reason>` and exits 1. It never writes to the game folder.
+`dist` holds no settings file, so copying `dist\ProjectPBZ` over a game folder never replaces a player's settings. If a build or test fails, `dist` is not touched. Prints `BUILD-ALL OK` and exits 0, or `BUILD-ALL FAILED: <reason>` and exits 1. It never writes to the game folder.
 
 Checked by running it twice with a leftover `zzz_PBZ_ScriptModLoader_P.pak` placed in `dist` between runs: the second run removed it.
