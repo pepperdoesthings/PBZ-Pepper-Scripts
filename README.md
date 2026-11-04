@@ -16,7 +16,7 @@ The game's own logic is JavaScript running in its script engine (PuerTS). These 
 
 1. Back up your save.
 2. Install Mods Menu 0.5.4 or newer from its [Nexus page](https://www.nexusmods.com/phantombladezero/mods/149), following its README. It is not included here: its licence does not allow redistribution.
-3. Copy the contents of `dist\` (the `ProjectPBZ` folder inside it) into the game's root folder. This adds `ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression\` and `ProjectPBZ\Content\Paks\~mods\EarnedProgression.json`. When updating, skip `EarnedProgression.json` if you have changed it.
+3. Copy the contents of `dist\` (the `ProjectPBZ` folder inside it) into the game's root folder. This adds `ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression\`. No settings file is included, so updating never overwrites yours.
 4. Start the game. Look for `EarnedProgression.log` in `ProjectPBZ\Content\Paks\~mods\`. If it never appears, open `%LOCALAPPDATA%\ProjectPBZ\Saved\PBZModsMenuLoader-log.txt`: it says `loaded EarnedProgression`, or `failed EarnedProgression` and why.
 
 **Updating from 0.9.x**, which used ScriptModLoader: the 4 November 2026 game update stops the game at the title screen while ScriptModLoader is installed. Delete `zzz_PBZ_ScriptModLoader_P` and `zzz_PBZ_SMLEarnedProgression_P` (`.pak`, `.utoc`, `.ucas` each), `ScriptModLoader.json` and `ScriptModLoader.log` from `~mods`.
@@ -36,14 +36,14 @@ From the repository root:
 powershell -ExecutionPolicy Bypass -File tools\build-all.ps1
 ```
 
-For each mod this checks the scripts for syntax errors, runs the offline tests, copies the scripts into the mod's own `dist\` folder and compares every copy with its source byte for byte. Earned Progression's build also writes the default `EarnedProgression.json`. `build-all.ps1` then rebuilds `dist\ProjectPBZ\` at the repository root from the mods' `dist` folders. It stops at the first failure and prints `BUILD-ALL FAILED: <reason>`. It never writes into the game folder: copy `dist\ProjectPBZ` yourself. To build one mod alone, run its own script, for example `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`.
+For each mod this checks the scripts for syntax errors, runs the offline tests, copies the scripts into the mod's own `dist\` folder and compares every copy with its source byte for byte. `build-all.ps1` then rebuilds `dist\ProjectPBZ\` at the repository root from the mods' `dist` folders. It stops at the first failure and prints `BUILD-ALL FAILED: <reason>`. It never writes into the game folder: copy `dist\ProjectPBZ` yourself. To build one mod alone, run its own script, for example `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`.
 
 ## Edit the scripts
 
 - The source of each mod is under `<Mod>\src\ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\<Mod>\`. That is also where the files go in the game, so a file's place in `src` is its place in the game's folder.
 - Edit, run `tools\build-all.ps1`, copy `dist\ProjectPBZ` to the game, and restart the game. Mods Menu reads the scripts when the game starts.
 - `EarnedProgression` keeps its rules in `lib/Settings.js`, `lib/Progress.js`, `lib/DustCut.js` and `lib/BossNames.js`, which never touch game objects. Everything that calls into the game is in `lib/Game.js`, `lib/Spawners.js` and `lib/Kills.js`. Start there when something game-related needs changing.
-- Settings need no rebuild. `EarnedProgression.json` in `~mods` is re-read about every 2 seconds. The mod writes it with the default values on first start, and only when it is missing, so delete it to pick up new defaults. The defaults are at the top of `lib/Settings.js`.
+- Settings need no rebuild. Four of them are rows in Mods Menu (`lib/Menu.js`), saved to `EarnedProgression.txt` in `~mods`. All of them can also be set in `EarnedProgression.json` there, written by hand, and a key in the JSON wins. Both files are re-read about every 2 seconds, and the mod creates neither. The defaults are at the top of `lib/Settings.js`.
 - Use `api.log("...")` to write to `EarnedProgression.log`. `EarnedProgression` also has a `debugLog` setting, on by default, that adds a line per kill.
 
 ## Add a new mod
@@ -59,8 +59,8 @@ For each mod this checks the scripts for syntax errors, runs the offline tests, 
    exports.ready = true;
    ```
 
-   To log to a file and wrap game methods the way Earned Progression does, copy its `lib/Api.js` and `lib/Boot.js` and give `Api.js` its own `LOG_FILE`. The `wrap` rules are in the comment above `wrap` in `lib/Api.js`.
-3. Add a build script: copy `EarnedProgression\build.ps1` to `MyMod\build.ps1`, change `$modRel` to the new folder, and drop the settings-file step if the mod has none.
+   To log to a file and wrap game methods the way Earned Progression does, copy its `lib/Api.js` and `lib/Boot.js` and give `Api.js` its own `LOG_FILE`. The `wrap` rules are in the comment above `wrap` in `lib/Api.js`. For rows in Mods Menu, see `lib/Menu.js`: a mod hands the menu a description of its section (`globalThis.PBZModsMenu.push`), and the menu saves the values to a `key=value` `.txt` file in `~mods` that the mod reads.
+3. Add a build script: copy `EarnedProgression\build.ps1` to `MyMod\build.ps1` and change `$modRel` to the new folder.
 4. Add `'MyMod'` to the `$mods` list near the top of `tools\build-all.ps1`.
 5. Build, copy `dist\ProjectPBZ` to the game, start it, and read `%LOCALAPPDATA%\ProjectPBZ\Saved\PBZModsMenuLoader-log.txt`. You should see `loaded MyMod`. A mod that throws is logged as `failed` and the others still load.
 
