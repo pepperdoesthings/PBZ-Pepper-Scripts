@@ -4,22 +4,15 @@ What each tool in this folder does and how to use it. Add a section for every ne
 
 ## What the build needs
 
-`tools\build-all.ps1` (and each mod's `build.ps1`) needs four things. Two come from the internet and two are installed programs:
+`tools\build-all.ps1` (and each mod's `build.ps1`) needs only **Node.js 18 or newer** on the PATH (`node`; https://nodejs.org/, checked with v24.16.0). The mods are loose script files for Mods Menu, so no pak tools are needed to build them.
 
-| Tool | Where it must be | Where to get it |
-|---|---|---|
-| repak | `tools\bin\repak\repak.exe` | https://github.com/trumank/repak/releases (asset `repak_cli-x86_64-pc-windows-msvc.zip`) |
-| retoc | `tools\bin\retoc\retoc.exe` | https://github.com/trumank/retoc/releases (asset `retoc_cli-x86_64-pc-windows-msvc.zip`) |
-| Node.js 18 or newer | on the PATH (`node`) | https://nodejs.org/ (checked with v24.16.0) |
-| Python 3 | on the PATH (`python`) | https://www.python.org/downloads/ (checked with 3.13.1) |
+Reading the game's own scripts (see "Read the game's scripts") needs **repak** at `tools\bin\repak\repak.exe`. `tools\get-tools.bat` downloads it. `tools\*.py` need **Python 3** (checked with 3.13.1).
 
-The quickest way to get repak and retoc is `tools\get-tools.bat` (below). To get them by hand instead, download each zip from the release page, check it against the `.sha256` file next to it, and unpack it so the `.exe` lands at the path in the table. Both builds stop with `missing tool: <path>` if an `.exe` is not where they expect it.
-
-`tools\bin\` holds downloaded programs, so it is not committed to git. Run `get-tools.bat` after a fresh checkout.
+`tools\bin\` holds downloaded programs, so it is not committed to git.
 
 ## tools/get-tools.bat
 
-Downloads the latest Windows releases of repak and retoc into `tools\bin\repak` and `tools\bin\retoc`, then checks that `node` and `python` are on the PATH. Double-click it, or from a command prompt:
+Downloads the latest Windows release of repak into `tools\bin\repak`, then checks that `node` and `python` are on the PATH. Double-click it, or from a command prompt:
 
 ```
 tools\get-tools.bat
@@ -28,7 +21,7 @@ tools\get-tools.bat /nopause
 
 `/nopause` skips the "press any key" at the end, for when another script calls it.
 
-For each tool it:
+It:
 1. Downloads `https://github.com/trumank/<tool>/releases/latest/download/<tool>_cli-x86_64-pc-windows-msvc.zip`, and the `.sha256` file published next to it. GitHub's `releases/latest/download/` address always points at the newest release.
 2. Computes the zip's SHA-256 with `certutil` and compares it with the published value. On a mismatch it prints both hashes and does not install that tool.
 3. Unpacks the zip with `tar` into `tools\bin\<tool>\`, overwriting an older copy, and prints the installed version.
@@ -37,11 +30,11 @@ It uses only programs that ship with Windows 10 (1803 and newer) and 11: `curl`,
 
 **Why a `.bat`:** Windows runs batch files without the PowerShell execution-policy prompt, so a double-click just works.
 
-**What the checksum does and does not prove:** it proves the zip was not damaged or swapped on the way, compared with what the release page lists. It does not prove the release itself is trustworthy; that rests on trusting the repak and retoc authors, the same as downloading by hand.
+**What the checksum does and does not prove:** it proves the zip was not damaged or swapped on the way, compared with what the release page lists. It does not prove the release itself is trustworthy; that rests on trusting repak's author, the same as downloading by hand.
 
-**Updates:** it always takes the newest release. A newer repak or retoc could change behaviour; the builds' byte-for-byte pak check would catch a pak whose contents differ, but not every possible change. If a build starts failing after an update, the versions known to work are repak 0.2.3 and retoc 0.1.5 (below).
+**Updates:** it always takes the newest release. If reading the game's paks starts failing after an update, the version known to work is repak 0.2.3.
 
-Checked in temporary copies of the project: a fresh run downloaded both tools, and the `.exe` files were byte-identical to the ones in `tools\bin`; a changed hash was refused for both tools with exit code 1; and a full `build-all.ps1` passed using only the downloaded tools.
+Checked in a temporary copy of the project: a run downloaded repak 0.2.3, its SHA-256 matched, and node and python were found (`GET-TOOLS OK`).
 
 ## unpak.py
 
@@ -75,7 +68,7 @@ python tools/unpak.py "ProjectPBZ/Content/Paks/~mods/zzz_PBZ_PhantomSouls_P.pak"
 - Doesn't read the `.utoc` / `.ucas` files. Here they look like empty stubs.
 - Only extracts. It cannot build a pak.
 
-**Alternatives:** [repak](https://github.com/trumank/repak) and FModel, both widely used and not tried in this project.
+**Alternatives:** [repak](https://github.com/trumank/repak) (see below) and FModel.
 
 ## listpak.py
 
@@ -100,24 +93,24 @@ python tools/listpak.py "ProjectPBZ/Content/Paks/~mods/zzz_PBZ_PhantomSouls_P.pa
 
 **Limits:**
 - Reads pak format version 11 with an unencrypted index only. Tested on the Phantom Souls mod pak (9 entries).
-- Fails on the game's `ProjectPBZ-Windows.pak`: that pak is format version 12 and its index is AES-encrypted. Reading it needs the AES key, which we do not have.
+- Fails on the game's `ProjectPBZ-Windows.pak`: that pak is format version 12 and its index is AES-encrypted. Use repak with the AES key instead (see "Read the game's scripts").
 - Does not read IoStore containers (`.utoc` / `.ucas`). The game's `ProjectPBZ-Windows_s*.ucas` files are IoStore.
 - The compressed-entry branch is untested.
 
-## Node test runner (ScriptModLoader tests)
+## Node test runner (Earned Progression tests)
 
-Runs the offline tests for the ScriptModLoader mod. Needs Node.js v24 (checked with v24.16.0). No packages to install.
+Runs the offline tests. Needs Node.js v24 (checked with v24.16.0). No packages to install.
 
 **Usage** (from the project root):
 
 ```
-cd ScriptModLoader
+cd EarnedProgression
 node --test "tests/*.test.js"
 ```
 
 Keep the quotes: Node expands the pattern itself, so it works the same in PowerShell.
 
-**What it does:** runs every `tests/*.test.js` file with Node's built-in `node:test`. Each test replaces the game's file and timer functions with a small fake (`tests/helpers.js`), so no game is needed.
+**What it does:** runs every `tests/*.test.js` file with Node's built-in `node:test`. The tests replace the game's modules with small fakes (`tests/fakegame.js`, and the fakes inside `api.test.js` and `main.test.js`), so no game is needed.
 
 **Syntax check only:**
 
@@ -125,87 +118,62 @@ Keep the quotes: Node expands the pattern itself, so it works the same in PowerS
 node --check <file.js>
 ```
 
-**Limits:** these tests prove the loader's logic. They cannot prove that the game's script engine accepts the code. The game's `ue` and `puerts` modules do not exist under Node.
+**Limits:** these tests prove the mod's logic. They cannot prove that the game's script engine accepts the code, or that Mods Menu loads it. The game's `ue` and `puerts` modules do not exist under Node.
 
 ## repak (tools/bin/repak/repak.exe)
 
-Packs a folder into an Unreal `.pak`, and lists or unpacks paks. Open source: https://github.com/trumank/repak (MIT or Apache-2.0, licences are in the folder).
+Lists and unpacks Unreal `.pak` files, including encrypted ones when given the key. Open source: https://github.com/trumank/repak (MIT or Apache-2.0, licences are in the folder).
 
 **Version:** v0.2.3, Windows x64 zip, SHA-256 `6720d602144d75df477a99d5bedb6ea780997546afc335901d4937cafeaa73fa` (checked against the value GitHub publishes for the release).
 
-**Usage we rely on:**
+## Read the game's scripts
 
-```
-tools/bin/repak/repak.exe pack --version V11 --mount-point "../../../" <folder> <out.pak>
-tools/bin/repak/repak.exe list <pak>
-```
+The game's JavaScript is inside `<game folder>\ProjectPBZ\Content\Paks\ProjectPBZ-Windows.pak`. Its index (the table of contents) is encrypted with AES, so tools need the game's 256-bit AES key. The community key is published at https://www.unknowncheats.me/forum/forum-general/779035-phantom-blade-zero-aes-key.html (found with AESDumpster). Keep it in `.secrets\pbz-aes-key.txt`: `.secrets/` is git-ignored, so the key is never committed.
 
-The folder's contents become the pak's paths, so pack the folder that contains `ProjectPBZ/`. Pak version V11 and mount point `../../../` match the mod paks we examined. It cannot write compressed or encrypted paks, and we never need to.
+Unpack only the scripts, outside the tracked files (`temp/` is git-ignored):
 
-## retoc (tools/bin/retoc/retoc.exe)
-
-Converts between Unreal IoStore containers (`.utoc`/`.ucas`) and paks. We use it only to create the empty `.utoc` and `.ucas` stub files that sit next to a mod pak. Open source: https://github.com/trumank/retoc (MIT, licence in the folder).
-
-**Version:** v0.1.5, Windows x64 zip, SHA-256 `cc036b06ad3bdcf7003690b00d82719980c374e48a95bf0654f9959148d263aa` (checked against the published value).
-
-**Usage we rely on:**
-
-```
-tools/bin/retoc/retoc.exe to-zen --version UE5_7 <in.pak> <out.utoc>
+```powershell
+$key = Get-Content .secrets\pbz-aes-key.txt
+$pak = "<game folder>\ProjectPBZ\Content\Paks\ProjectPBZ-Windows.pak"
+tools\bin\repak\repak.exe --aes-key $key unpack -i ProjectPBZ/Content/JavaScript -o temp\gamejs-<build> $pak
 ```
 
-Because our pak holds only scripts and no assets, this writes a 202-byte `.utoc` and a 64-byte `.ucas`, the same sizes as Phantom Souls' stubs. Their headers are identical except for a container ID (8 bytes) that retoc generates from the input, so our stubs do not collide with other mods' stubs. `UE5_7` is a guess from the engine version quoted in KintaroModding's README; the stubs contain no assets, so the version should not matter, but this is untested in the game.
+`<build>` is the `buildid` from `steamapps\appmanifest_4115450.acf`. Build 26367565 gave 216 `.js`, 2 `.json` and 5 `.wasm` files. `repak.exe --aes-key $key info $pak` shows the pak's version (V11), the Oodle compression and the entry count (5181) without unpacking.
 
-## ScriptModLoader/build.ps1
+To see what an update changed, unpack the new build next to the old one and compare file hashes; ignore files whose only change is a missing `//# sourceMappingURL=...` last line.
 
-Builds the loader mod. From the project root:
+The scripts belong to S-GAME. Never commit or share them.
 
-```
-powershell -ExecutionPolicy Bypass -File ScriptModLoader\build.ps1
-```
-
-Steps, in order, stopping at the first failure:
-1. `node --check` on every `.js` file.
-2. The offline tests (`node --test "tests/*.test.js"`).
-3. `repak pack` into `ScriptModLoader\dist\zzz_PBZ_ScriptModLoader_P.pak`.
-4. `retoc to-zen` for the `.utoc` and `.ucas` stubs.
-5. Extracts the pak with `tools/listpak.py` and compares every file byte for byte with `ScriptModLoader\src`.
-
-Prints `BUILD OK` and exits 0 on success; prints `BUILD FAILED: <reason>` and exits 1 otherwise. Checked by breaking a test and by adding a syntax error: both stopped the build. It does not install anything into the game folder.
+**Since build 26367565 the game checks its scripts byte for byte.** A pak in `~mods` that replaces a game script with different bytes stops the game at the title screen; the identical bytes load fine (checked in game with a one-file test pak). That is why these mods run on Mods Menu instead of replacing a script.
 
 ## EarnedProgression/build.ps1
 
-Builds the Earned Progression plugin pack. From the project root:
+Builds Earned Progression. From the project root:
 
 ```
 powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1
 ```
 
 Steps, in order, stopping at the first failure:
-1. Reads `VERSION` from `ScriptModLoader\...\Loader.js` and refuses anything older than 1.1.0 (the plugin uses `api.SKIP`).
-2. `node --check` on every `.js` file.
-3. The offline tests (`node --test "tests/*.test.js"`). They run the loader's own `createLoader` against a hand-written fake of the game.
-4. `repak pack` into `EarnedProgression\dist\zzz_PBZ_SMLEarnedProgression_P.pak`.
-5. `retoc to-zen` for the `.utoc` and `.ucas` stubs.
-6. Extracts the pak with `tools/listpak.py` and compares every file byte for byte with `EarnedProgression\src`.
+1. `node --check` on every `.js` file in `src` and `tests`.
+2. The offline tests (`node --test "tests/*.test.js"`).
+3. Copies `src\ProjectPBZ` to `dist\ProjectPBZ`.
+4. Writes `dist\ProjectPBZ\Content\Paks\~mods\EarnedProgression.json` by calling the mod's own `defaultsText()` in `lib/Settings.js`, so it is the same text the mod writes when the file is missing, and checks that it is valid JSON.
+5. Compares every copied script with `src` byte for byte.
 
-Prints `BUILD OK` and exits 0, or `BUILD FAILED: <reason>` and exits 1. Checked by lowering the loader version and by breaking a test: both stopped the build. It does not install anything into the game folder.
-
-The plugin pak holds only new files (`Mods/EarnedProgression.js` and `Mods/EarnedProgressionLib/*`), never a game file, so it cannot collide with another mod's pak. The loader pak is the one that replaces `WeaponNormalTextEntry.js`.
+Prints `BUILD OK` and exits 0, or `BUILD FAILED: <reason>` and exits 1. Checked by breaking a test: the build stopped. It does not install anything into the game folder.
 
 ## tools/build-all.ps1
 
-Builds both mods and gathers the built files in `dist\ProjectPBZ\Content\Paks\~mods` at the repository root, in one command. Needs the tools listed in "What the build needs" at the top. From anywhere:
+Builds every mod and gathers the results in `dist\ProjectPBZ` at the repository root. From anywhere:
 
 ```
 powershell -ExecutionPolicy Bypass -File tools\build-all.ps1
 ```
 
-Steps, in order, stopping at the first failure:
-1. Runs `ScriptModLoader\build.ps1` (syntax check, tests, pak, byte-for-byte check) and updates `ScriptModLoader\dist`.
-2. Runs `EarnedProgression\build.ps1` the same way and updates `EarnedProgression\dist`. That build also writes `EarnedProgression.json`, the default settings, next to the pak. It is made by calling the mod's own `defaultsText()` in `Settings.js`, so it is the same text the mod writes when the file is missing, and checks that it is valid JSON. The loader goes first because the plugin's build checks the loader's version and its tests run the loader's code.
-3. Copies every file of both mods' own `dist` folders into the root `dist\ProjectPBZ\Content\Paks\~mods` (including `EarnedProgression.json`) and compares each copy with its source by hash.
+1. Runs each mod's `build.ps1` (the `$mods` list at the top; today only `EarnedProgression`).
+2. Deletes `dist\ProjectPBZ` and rebuilds it from the mods' `dist\ProjectPBZ` folders, so a file a mod no longer has does not linger. Fails if two mods write the same file. Compares every copy with its source by hash.
 
-`dist\ProjectPBZ\Content\Paks\~mods\ScriptModLoader.json` (the registry) is created with the `EarnedProgression` entry if it is missing, and is never overwritten, so a registry you edited stays as it is. `EarnedProgression.json` is rebuilt on every run, so a change to the defaults in `Settings.js` shows up in `dist\ProjectPBZ\Content\Paks\~mods` after the next build. Copying `dist\ProjectPBZ\Content\Paks\~mods` over a game folder replaces the player's own `EarnedProgression.json`, so skip that file when updating. If a build or test fails, `dist\ProjectPBZ\Content\Paks\~mods` is not touched. Prints `BUILD-ALL OK` and exits 0, or `BUILD-ALL FAILED: <reason>` and exits 1. It never writes to the game folder: copy `dist\ProjectPBZ\Content\Paks\~mods\*` there yourself.
+Copying `dist\ProjectPBZ` over a game folder replaces the player's own `EarnedProgression.json`, so skip that file when updating. If a build or test fails, `dist` is not touched. Prints `BUILD-ALL OK` and exits 0, or `BUILD-ALL FAILED: <reason>` and exits 1. It never writes to the game folder.
 
-Checked by breaking a plugin test, by breaking a loader test (the plugin build did not start), by deleting the registry (recreated) and by editing it (kept).
+Checked by running it twice with a leftover `zzz_PBZ_ScriptModLoader_P.pak` placed in `dist` between runs: the second run removed it.
