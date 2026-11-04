@@ -12,3 +12,5 @@ EarnedProgression/tests
 EarnedProgression/dist
 /AGENTS.md
 install
+# Local secrets (game AES key etc.), never commit
+/.secrets/
