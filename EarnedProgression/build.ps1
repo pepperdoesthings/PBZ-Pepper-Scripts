@@ -1,36 +1,21 @@
-# Builds the Earned Progression pack into EarnedProgression\dist\ and checks it.
+# Builds Earned Progression into EarnedProgression\dist\ and checks it.
 # Usage (from anywhere): powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1
-# Needs: node, python, the tools in ..\tools\bin (repak, retoc) and ..\tools\listpak.py,
-# and the sibling folder ..\ScriptModLoader (the wiring tests run the loader's own code).
+# Needs: node. The output is loose files for Mods Menu, no pak.
+#
+# dist\ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression\...   the mod (copied from src)
+# dist\ProjectPBZ\Content\Paks\~mods\EarnedProgression.json                   the default settings
 $ErrorActionPreference = 'Stop'
 
 $modDir   = $PSScriptRoot
-$rootDir  = Split-Path $modDir -Parent
-$toolsDir = Join-Path $rootDir 'tools'
-$repak    = Join-Path $toolsDir 'bin\repak\repak.exe'
-$retoc    = Join-Path $toolsDir 'bin\retoc\retoc.exe'
-$listpak  = Join-Path $toolsDir 'listpak.py'
-$loader   = Join-Path $rootDir 'ScriptModLoader\src\ProjectPBZ\Content\JavaScript\ScriptModLoader\Loader.js'
 $src      = Join-Path $modDir 'src'
 $dist     = Join-Path $modDir 'dist'
-$name     = 'zzz_PBZ_SMLEarnedProgression_P'
-$pak      = Join-Path $dist "$name.pak"
-$utoc     = Join-Path $dist "$name.utoc"
-$ucas     = Join-Path $dist "$name.ucas"
+$modRel   = 'ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression'
 
 function Fail($message) { Write-Host "BUILD FAILED: $message" -ForegroundColor Red; exit 1 }
 function Step($message) { Write-Host "== $message" }
 
-foreach ($tool in $repak, $retoc, $listpak, $loader) {
-    if (-not (Test-Path $tool)) { Fail "missing: $tool" }
-}
-
-Step 'loader version (the plugin needs ScriptModLoader 1.1.0 or newer)'
-$version = (node -e "console.log(require(process.argv[1]).VERSION)" $loader).Trim()
-if ($LASTEXITCODE -ne 0 -or $version -notmatch '^\d+\.\d+\.\d+$') { Fail 'could not read the loader version' }
-$parts = $version.Split('.') | ForEach-Object { [int]$_ }
-if ($parts[0] -lt 1 -or ($parts[0] -eq 1 -and $parts[1] -lt 1)) { Fail "ScriptModLoader is $version, 1.1.0 or newer is needed" }
-Write-Host "   ScriptModLoader $version"
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Fail 'node is not on the PATH' }
+if (-not (Test-Path (Join-Path $src "$modRel\main.js"))) { Fail "missing $src\$modRel\main.js" }
 
 Step 'syntax check'
 Get-ChildItem $src, (Join-Path $modDir 'tests') -Recurse -Filter *.js | ForEach-Object {
@@ -48,41 +33,30 @@ try {
 }
 finally { Pop-Location }
 
-Step 'pack (pak version 11, mount point ../../../)'
+Step 'copy src to dist'
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 New-Item -ItemType Directory -Force $dist | Out-Null
-& $repak pack --version V11 --mount-point '../../../' --quiet $src $pak
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $pak)) { Fail 'repak pack failed' }
-
-Step 'IoStore stubs (.utoc/.ucas)'
-& $retoc to-zen --version UE5_7 $pak $utoc | Out-Null
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $utoc) -or -not (Test-Path $ucas)) { Fail 'retoc to-zen failed' }
+Copy-Item (Join-Path $src 'ProjectPBZ') (Join-Path $dist 'ProjectPBZ') -Recurse
 
 Step 'default settings file (EarnedProgression.json, the same text the mod writes on first start)'
-$settingsJs = Join-Path $src 'ProjectPBZ\Content\JavaScript\ScriptModLoader\Mods\EarnedProgressionLib\Settings.js'
-$settingsOut = Join-Path $dist 'EarnedProgression.json'
+$settingsJs = Join-Path $src "$modRel\lib\Settings.js"
+$settingsDir = Join-Path $dist 'ProjectPBZ\Content\Paks\~mods'
+$settingsOut = Join-Path $settingsDir 'EarnedProgression.json'
+New-Item -ItemType Directory -Force $settingsDir | Out-Null
 node -e "require('fs').writeFileSync(process.argv[2], require(process.argv[1]).defaultsText())" $settingsJs $settingsOut
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $settingsOut)) { Fail 'could not write the default settings file' }
 try { $null = Get-Content $settingsOut -Raw | ConvertFrom-Json } catch { Fail 'the default settings file is not valid JSON' }
 
-Step 'verify pak contents against src (byte for byte)'
-$check = Join-Path $env:TEMP "ep-verify-$PID"
-if (Test-Path $check) { Remove-Item $check -Recurse -Force }
-# listpak.py prints its summary line to stderr, which 'Stop' would treat as an error
-$ErrorActionPreference = 'Continue'
-python $listpak $pak '' --extract $check 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Fail 'listpak.py failed' }
-$ErrorActionPreference = 'Stop'
-$files = Get-ChildItem $src -Recurse -File
-$extracted = @(Get-ChildItem $check -Recurse -File)
-if ($extracted.Count -ne $files.Count) { Fail "pak holds $($extracted.Count) files, source has $($files.Count)" }
+Step 'verify dist against src (byte for byte)'
+$files = @(Get-ChildItem $src -Recurse -File)
+$copies = @(Get-ChildItem (Join-Path $dist 'ProjectPBZ\Content\JavaScript') -Recurse -File)
+if ($copies.Count -ne $files.Count) { Fail "dist holds $($copies.Count) script files, source has $($files.Count)" }
 foreach ($f in $files) {
     $rel = $f.FullName.Substring($src.Length + 1)
-    $copy = Join-Path $check $rel
-    if (-not (Test-Path $copy) -or (Get-FileHash $f.FullName).Hash -ne (Get-FileHash $copy).Hash) { Fail "pak entry differs from source: $rel" }
+    $copy = Join-Path $dist $rel
+    if (-not (Test-Path $copy) -or (Get-FileHash $f.FullName).Hash -ne (Get-FileHash $copy).Hash) { Fail "dist file differs from source: $rel" }
 }
-Remove-Item $check -Recurse -Force
 
 Step 'result'
-Get-ChildItem $dist | ForEach-Object { '   {0}  {1} bytes' -f $_.Name, $_.Length }
+Get-ChildItem $dist -Recurse -File | ForEach-Object { '   {0}  {1} bytes' -f $_.FullName.Substring($dist.Length + 1), $_.Length }
 Write-Host 'BUILD OK' -ForegroundColor Green

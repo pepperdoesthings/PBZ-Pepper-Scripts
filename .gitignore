@@ -4,8 +4,6 @@ docs/superpowers
 /_gamejs
 tools/bin
 extracted
-ScriptModLoader/tests
-ScriptModLoader/dist
 /dist
 /temp
 EarnedProgression/tests

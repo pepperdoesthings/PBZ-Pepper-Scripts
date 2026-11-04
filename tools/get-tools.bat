@@ -1,8 +1,8 @@
 @echo off
-rem Downloads the latest Windows releases of repak and retoc into tools\bin, the place
-rem tools\build-all.ps1 (and each mod's build.ps1) looks for them. Each download is checked
-rem against the SHA-256 file published with the release before it is unpacked.
-rem Also checks that node and python, which the builds need too, are on the PATH.
+rem Downloads the latest Windows release of repak into tools\bin\repak. repak unpacks the game's
+rem scripts for reading (see tools\instructions.md). The download is checked against the SHA-256
+rem file published with the release before it is unpacked.
+rem Also checks that node (needed by the builds) and python (needed by tools\*.py) are on the PATH.
 rem Uses only programs that come with Windows 10 and 11: curl, tar and certutil.
 rem
 rem Usage: double-click it, or run  tools\get-tools.bat  (add /nopause to skip the final pause).
@@ -24,7 +24,6 @@ if exist "%WORK%" rmdir /s /q "%WORK%"
 mkdir "%WORK%" || (echo [error] cannot create %WORK% & set "FAILED=1" & goto :end)
 
 call :getTool repak repak_cli-x86_64-pc-windows-msvc.zip repak.exe
-call :getTool retoc retoc_cli-x86_64-pc-windows-msvc.zip retoc.exe
 
 echo.
 echo == also needed on the PATH (not downloaded by this script)
