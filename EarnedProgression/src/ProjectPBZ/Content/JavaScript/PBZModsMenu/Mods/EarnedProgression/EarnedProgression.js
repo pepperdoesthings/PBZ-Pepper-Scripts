@@ -1,15 +1,15 @@
 "use strict";
 // Earned Progression: kills only become permanent when the player rests at a bell not used before.
-// Loaded by ScriptModLoader as the plugin "EarnedProgression".
+// Started by main.js, which Mods Menu loads.
 Object.defineProperty(exports, "__esModule", { value: true });
 
-const { createGame, TAG_DEAD } = require("./EarnedProgressionLib/Game");
-const { createSpawners } = require("./EarnedProgressionLib/Spawners");
-const { createKills } = require("./EarnedProgressionLib/Kills");
-const { createSettings } = require("./EarnedProgressionLib/Settings");
-const { createDustCut, cutFor } = require("./EarnedProgressionLib/DustCut");
-const Progress = require("./EarnedProgressionLib/Progress");
-const { createWaveProbe } = require("./EarnedProgressionLib/WaveProbe");
+const { createGame, TAG_DEAD } = require("./lib/Game");
+const { createSpawners } = require("./lib/Spawners");
+const { createKills } = require("./lib/Kills");
+const { createSettings } = require("./lib/Settings");
+const { createDustCut, cutFor } = require("./lib/DustCut");
+const Progress = require("./lib/Progress");
+const { createWaveProbe } = require("./lib/WaveProbe");
 
 const VERSION = "0.9.2";
 const SETTINGS_FILE = "EarnedProgression.json";
@@ -27,9 +27,9 @@ function gameModules() {
     return {
         UE: require("ue"),
         puerts: require("puerts"),
-        tsHelper: require("../../Library/TsHelper").default,
-        RenewalPlayer: require("../../Gameplay/RenewalPlayer").RenewalPlayerinXinInterface,
-        DustTips: require("../../UI/Widget/Foundation/DustTips").PBZUpdateDustWidgetInterface,
+        tsHelper: require("../../../Library/TsHelper").default,
+        RenewalPlayer: require("../../../Gameplay/RenewalPlayer").RenewalPlayerinXinInterface,
+        DustTips: require("../../../UI/Widget/Foundation/DustTips").PBZUpdateDustWidgetInterface,
         timers: { setInterval, clearInterval, setTimeout },
         showText: gameShowText,
     };
@@ -39,7 +39,7 @@ function gameModules() {
 // failure only affects the messages.
 function gameShowText(ctx, text) {
     const cpp = require("cpp");
-    const UIHelper = require("../../Library/UIHelper").default;
+    const UIHelper = require("../../../Library/UIHelper").default;
     UIHelper.showTipsText(ctx, cpp.FText.FromString(text));
 }
 
