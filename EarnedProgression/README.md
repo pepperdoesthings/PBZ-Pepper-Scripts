@@ -5,7 +5,7 @@ A script mod for Phantom Blade Zero (needs [Mods Menu](https://www.nexusmods.com
 Offline single-player only. The game build it was last checked against is in `TESTED_BUILD.txt` in the repository root.
 
 ## Status
-Version 0.10.0, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
+Version 0.10.1, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
 
 Back up your save before the first run. The mod stores its progress in the save under the section name `EarnedProgression`. What the game does with that section if you later remove the mod is untested.
 
@@ -89,7 +89,7 @@ Look in `EarnedProgression.log` in `~mods`. Mods Menu's own line for the mod is 
 
 | Check | What you should see |
 |---|---|
-| The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.0: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
+| The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.1: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
 | The menu section | `menu: registered with Mods Menu`, and an Earned Progression section on the Mods Menu tab |
 | An older JSON on the first start | `settings: moved respawnDust, bellSafeRadius, newBellMessage, debugLog from EarnedProgression.json to EarnedProgression.txt (Mods Menu now changes them)` (only the keys the JSON had) |
 | A level is ready | `ready on <level>: N pending, M known bells` |
