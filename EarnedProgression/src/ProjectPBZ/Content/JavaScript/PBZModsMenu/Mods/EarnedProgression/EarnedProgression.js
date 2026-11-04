@@ -11,7 +11,7 @@ const { createDustCut, cutFor } = require("./lib/DustCut");
 const Progress = require("./lib/Progress");
 const { createWaveProbe } = require("./lib/WaveProbe");
 
-const VERSION = "0.9.2";
+const VERSION = "0.10.0";
 const SETTINGS_FILE = "EarnedProgression.json";
 const KILL_TICK_MS = 500;
 // A bell counts as the one the player respawns at when it is this close (cm) to the respawn point.

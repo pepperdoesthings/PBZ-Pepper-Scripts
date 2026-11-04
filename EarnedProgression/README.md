@@ -1,11 +1,11 @@
 # Earned Progression
 
-A script mod for Phantom Blade Zero (plugin for ScriptModLoader). Enemies you kill only stay dead once you have reached a new rest spot. Die before that and they come back.
+A script mod for Phantom Blade Zero (needs [Mods Menu](https://www.nexusmods.com/phantombladezero/mods/149) 0.5.4 or newer). Enemies you kill only stay dead once you have reached a new rest spot. Die before that and they come back.
 
 Offline single-player only. The game build it was last checked against is in `TESTED_BUILD.txt` in the repository root.
 
 ## Status
-Version 0.9.2, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `Mods/EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
+Version 0.10.0, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
 
 Back up your save before the first run. The mod stores its progress in the save under the section name `EarnedProgression`. What the game does with that section if you later remove the mod is untested.
 
@@ -34,23 +34,17 @@ Wave fights that are not broken bell trials may still misbehave, and the whole g
 - `bellExceptions`: if the bell you respawn at is on this list, nothing comes back on that death.
 - `enemyExceptions`: spawners on this list are never recorded, so they never come back.
 
-**Helping fix it.** The log is on by default. If a fight misbehaves after a death, open `ScriptModLoader.log` right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. Setting `debugWaveProbe` to `true` also logs each kill's mob domain and group. You can put the ids in your own `EarnedProgression.json` (see "Settings") to fix it on your machine.
+**Helping fix it.** The log is on by default. If a fight misbehaves after a death, open `EarnedProgression.log` (in `~mods`) right after the death and send the lines from just before and after it: the `kill:` lines for that fight and the `death: respawn bell ...` line. Those hold the ids that need adding. Setting `debugWaveProbe` to `true` also logs each kill's mob domain and group. You can put the ids in your own `EarnedProgression.json` (see "Settings") to fix it on your machine.
 
 ## Install
-1. Install **ScriptModLoader 1.1.0 or newer** first (see its README). Remove any other mod that replaces `WeaponNormalTextEntry.js`, such as Phantom Souls or Movement Speed. It does not work together with Phantom Souls, which has its own respawn rules.
-2. Build this pack: `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`. The files appear in `EarnedProgression\dist\`.
-3. Copy `zzz_PBZ_SMLEarnedProgression_P.pak`, `.utoc` and `.ucas` into `<game folder>\ProjectPBZ\Content\Paks\~mods\`.
-4. Add the mod to `ScriptModLoader.json` in the same folder:
+1. Install **Mods Menu 0.5.4 or newer** from its [Nexus page](https://www.nexusmods.com/phantombladezero/mods/149), following its README. It does not work together with Phantom Souls, which has its own respawn rules.
+2. Build: `powershell -ExecutionPolicy Bypass -File EarnedProgression\build.ps1`. The files appear in `EarnedProgression\dist\ProjectPBZ\`.
+3. Copy that `ProjectPBZ` folder into the game's root folder. This adds `ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression\` and `ProjectPBZ\Content\Paks\~mods\EarnedProgression.json` (the default settings; the mod also writes it itself if it is missing). Copying it over an existing one replaces your own settings.
+4. Start the game. `EarnedProgression.log` appears in `~mods`.
 
-```json
-{
-  "mods": [
-    { "id": "EarnedProgression", "enabled": true }
-  ]
-}
-```
+**Updating from 0.9.x:** delete `zzz_PBZ_ScriptModLoader_P` and `zzz_PBZ_SMLEarnedProgression_P` (`.pak`, `.utoc`, `.ucas` each), `ScriptModLoader.json` and `ScriptModLoader.log` from `~mods`. Since game build 26367565 the old loader stops the game at the title screen. Your settings and save carry over.
 
-5. Start the game. `EarnedProgression.json` (the default settings) is built into `dist\` next to the paks, and the mod also writes the same file itself if it is missing. Copying it over an existing one replaces your own settings.
+**Turning it off** without deleting it: add `EarnedProgression=0` under `[Mods]` in `~mods\PBZModsMenuLoader.txt` (Mods Menu's switch file).
 
 ## Settings
 `ProjectPBZ/Content/Paks/~mods/EarnedProgression.json`, re-read about every 2 seconds:
@@ -75,11 +69,11 @@ A value that cannot be used falls back to its default and is logged once. Entrie
 **How the death bell is found.** The mod does not use the last bell you rested at, because the game can change your current bell without a rest. At each death it asks the game which bell it will respawn you at, with the same two calls the game's own death code makes (`PBZGameSystem.GetSaveActorID`, then `GetSaveActorByID` for the actor). If the game has no bell set (it reports `None`, for example after a map teleport or a story respawn point), the log says `could not tell which bell you respawn at (the game has no respawn bell set)` and the death revives as normal, unless `bellProximityFallback` is on.
 
 ## What to check on the first run
-Look in `ScriptModLoader.log` (same folder). Every line from this mod starts with `[EarnedProgression]`.
+Look in `EarnedProgression.log` in `~mods`. Mods Menu's own line for the mod is in `%LOCALAPPDATA%\ProjectPBZ\Saved\PBZModsMenuLoader-log.txt`.
 
 | Check | What you should see |
 |---|---|
-| The mod loads | `EarnedProgression: loaded`, then `started 0.9.2: bellSafeRadius 1000, respawnDust 25` |
+| The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.0: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
 | A level is ready | `ready on <level>: N pending, M known bells` |
 | A death | `death: respawn bell <BellID> (actor <name>)`, then `death: N kill(s) coming back, M kept dead near the bell` and `respawn: N spawned` |
 | A rest | the usual `rest at ...` line, ending with `; bell id <BellID>` |
@@ -102,11 +96,12 @@ Things only the game can confirm:
 - Spawners that the game never marked dead come back after a death.
 - The Dust pop-up shows the reduced amount and no negative pop-up follows.
 
-If the log never mentions `EarnedProgression`, ScriptModLoader did not start the mod. Check the loader's own lines first.
+If `EarnedProgression.log` never appears, Mods Menu did not start the mod: `PBZModsMenuLoader-log.txt` says `failed EarnedProgression` and why, or has no line for it at all if Mods Menu itself did not start.
 
 ## Files
-- `Mods/EarnedProgression.js`: the plugin.
-- `Mods/EarnedProgressionLib/`: `Settings`, `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the code that touches game objects), and `WaveProbe` (diagnostic logging, only while `debugWaveProbe` is on; it only reads).
+- `main.js`: the entry Mods Menu loads. It hands the game's modules to `lib/Boot.js`.
+- `EarnedProgression.js`: the mod.
+- `lib/`: `Api` and `Boot` (log file, method hooks, settings files, start-up), `Settings`, `Progress`, `DustCut`, `BossNames` (rules, no game objects), `Game`, `Spawners`, `Kills` (the code that touches game objects), and `WaveProbe` (diagnostic logging, only while `debugWaveProbe` is on; it only reads).
 
 ## Credits
 - The approach is based on PVLW's Phantom Souls mod, whose author allows reuse with credit: how enemies are brought back around the death screen, the kill watch, the codex-based boss test, and the Dust pop-up cut. The code is re-implemented here.
