@@ -3,7 +3,8 @@
 # Needs: node. The output is loose files for Mods Menu, no pak.
 #
 # dist\ProjectPBZ\Content\JavaScript\PBZModsMenu\Mods\EarnedProgression\...   the mod (copied from src)
-# dist\ProjectPBZ\Content\Paks\~mods\EarnedProgression.json                   the default settings
+# No settings file: Mods Menu writes EarnedProgression.txt when a value is changed, and
+# EarnedProgression.json is only for players who write one by hand.
 $ErrorActionPreference = 'Stop'
 
 $modDir   = $PSScriptRoot
@@ -38,18 +39,9 @@ if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 New-Item -ItemType Directory -Force $dist | Out-Null
 Copy-Item (Join-Path $src 'ProjectPBZ') (Join-Path $dist 'ProjectPBZ') -Recurse
 
-Step 'default settings file (EarnedProgression.json, the same text the mod writes on first start)'
-$settingsJs = Join-Path $src "$modRel\lib\Settings.js"
-$settingsDir = Join-Path $dist 'ProjectPBZ\Content\Paks\~mods'
-$settingsOut = Join-Path $settingsDir 'EarnedProgression.json'
-New-Item -ItemType Directory -Force $settingsDir | Out-Null
-node -e "require('fs').writeFileSync(process.argv[2], require(process.argv[1]).defaultsText())" $settingsJs $settingsOut
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $settingsOut)) { Fail 'could not write the default settings file' }
-try { $null = Get-Content $settingsOut -Raw | ConvertFrom-Json } catch { Fail 'the default settings file is not valid JSON' }
-
 Step 'verify dist against src (byte for byte)'
 $files = @(Get-ChildItem $src -Recurse -File)
-$copies = @(Get-ChildItem (Join-Path $dist 'ProjectPBZ\Content\JavaScript') -Recurse -File)
+$copies = @(Get-ChildItem $dist -Recurse -File)
 if ($copies.Count -ne $files.Count) { Fail "dist holds $($copies.Count) script files, source has $($files.Count)" }
 foreach ($f in $files) {
     $rel = $f.FullName.Substring($src.Length + 1)
