@@ -113,16 +113,26 @@ function startWith(api, modules) {
     }
 
     function load(ctx) {
+        // The New Game Plus cycle: progress from an earlier playthrough means nothing in a new one.
+        const cycle = game.cycleCount(ctx);
+        if (!cycle.ok)
+            api.log("load: could not read the New Game Plus cycle (" + cycle.error + "), keeping the saved progress");
         const read = game.readSection(ctx);
         if (!read.ok) {
             api.log("could not read the saved progress: " + read.error);
-            state = Progress.emptyState();
+            state = Progress.emptyState(cycle.ok ? cycle.value : undefined);
             return;
         }
-        const loaded = Progress.load(read.data);
+        const loaded = Progress.load(read.data, cycle.ok ? cycle.value : undefined);
         if (loaded.problem)
             api.log("saved progress: " + loaded.problem);
         state = loaded.state;
+        // Store the emptied state at once, so the old cycle's progress is not dropped (and logged)
+        // again at every level load until the next kill, death or rest writes the save.
+        if (loaded.cycleReset) {
+            api.log(Progress.cycleResetText(loaded.cycleReset));
+            save(ctx);
+        }
     }
 
     // The loaded spawners with these actor names whose mob domain is on the domain exception list.
@@ -202,7 +212,8 @@ function startWith(api, modules) {
         }, KILL_TICK_MS);
         watch = { timer };
         probe.ready(player);
-        api.log("ready on " + game.levelName(player) + ": " + state.pending.length + " pending, " + state.bells.length + " known bells");
+        api.log("ready on " + game.levelName(player) + ": " + state.pending.length + " pending, " + state.bells.length + " known bells, cycle " +
+            (state.cycle === undefined ? "unknown" : state.cycle));
     }
 
     // The bell the game will respawn the player at. It is read from the game (the same calls its own

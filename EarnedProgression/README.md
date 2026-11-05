@@ -22,6 +22,7 @@ Back up your save before the first run. The mod stores its progress in the save 
 - An enemy whose mob domain matches `domainExceptions` is never recorded either. A pending kill whose domain was added to the list later is dropped at the next death.
 - Bosses, minibosses and the enemies in a boss's arena are never touched. The base game handles them.
 - Quitting and reloading does not bring pending enemies back. Only a death does.
+- New Game Plus: the mod's saved progress (pending kills, enemies that came back, known bells) belongs to the playthrough it was made in, which the game calls a cycle (0 is the first playthrough). On entering a level in a New Game Plus cycle with progress from another cycle, the mod starts empty, so every bell counts as new again. In the first playthrough nothing is ever dropped. Progress saved before 0.10.2 counts as cycle 0. If the game will not say which cycle it is, the progress is kept.
 
 ## Known issues
 
@@ -92,7 +93,8 @@ Look in `EarnedProgression.log` in `~mods`. Mods Menu's own line for the mod is 
 | The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.1: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
 | The menu section | `menu: registered with Mods Menu`, and an Earned Progression section on the Mods Menu tab |
 | An older JSON on the first start | `settings: moved respawnDust, bellSafeRadius, newBellMessage, debugLog from EarnedProgression.json to EarnedProgression.txt (Mods Menu now changes them)` (only the keys the JSON had) |
-| A level is ready | `ready on <level>: N pending, M known bells` |
+| A level is ready | `ready on <level>: N pending, M known bells, cycle C` (`cycle unknown` if the game would not say) |
+| The first level of a New Game Plus cycle | `load: saved progress is from cycle 0, now cycle 1, starting empty`, then `ready on <level>: 0 pending, 0 known bells, cycle 1` |
 | A death | `death: respawn bell <BellID> (actor <name>)`, then `death: N kill(s) coming back, M kept dead near the bell` and `respawn: N spawned` |
 | A rest | the usual `rest at ...` line, ending with `; bell id <BellID>` |
 | A kill in a broken bell trial (`debugLog` true) | `kill: <spawner> in domain <name> in a broken bell trial, not recorded` |

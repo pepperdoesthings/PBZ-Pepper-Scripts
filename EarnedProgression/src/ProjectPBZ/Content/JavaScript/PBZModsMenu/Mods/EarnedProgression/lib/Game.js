@@ -112,6 +112,23 @@ function createGame(deps) {
         }
     }
 
+    // The New Game Plus cycle (the game's "cycle": 0 = first playthrough, 1 = first NG+).
+    // Returns { ok: true, value } or { ok: false, error }.
+    function cycleCount(ctx) {
+        try {
+            const system = tsHelper.getWorldSubsystem(ctx, UE.PBZGameSystem.StaticClass());
+            if (!system || typeof system.GetCycleCount !== "function")
+                return { ok: false, error: "no game system" };
+            const value = system.GetCycleCount();
+            if (!Number.isInteger(value) || value < 0)
+                return { ok: false, error: "cycle " + String(value).slice(0, 20) };
+            return { ok: true, value };
+        }
+        catch (e) {
+            return { ok: false, error: e && e.message ? String(e.message) : String(e) };
+        }
+    }
+
     // Where the player comes back after dying (the bell), or undefined when the game will not say.
     function reviveCenter(ctx) {
         try {
@@ -183,7 +200,7 @@ function createGame(deps) {
         playerActor.ChangeDustNum(false, amount);
     }
 
-    return { isAlive, hasTag, levelName, location, player, readSection, writeSection, aiSubsystem, bellManager, brokenBellTrial, reviveCenter, respawnBell, listBells, takeDust };
+    return { isAlive, hasTag, levelName, location, player, readSection, writeSection, aiSubsystem, bellManager, brokenBellTrial, cycleCount, reviveCenter, respawnBell, listBells, takeDust };
 }
 
 exports.SECTION_ID = SECTION_ID;
