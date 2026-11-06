@@ -5,7 +5,7 @@ A script mod for Phantom Blade Zero (needs [Mods Menu](https://www.nexusmods.com
 Offline single-player only. The game build it was last checked against is in `TESTED_BUILD.txt` in the repository root.
 
 ## Status
-Version 0.10.1, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
+Version 0.10.2, a pre-release. It runs in the game and works in play-testing. It is not 1.0 yet because the whole game has not been played through with it (see "Known issues"). The version is the `VERSION` constant in `EarnedProgression.js` and is written to the log when the mod starts. "What to check on the first run" lists what to look for.
 
 Back up your save before the first run. The mod stores its progress in the save under the section name `EarnedProgression`. What the game does with that section if you later remove the mod is untested.
 
@@ -28,10 +28,12 @@ Back up your save before the first run. The mod stores its progress in the save 
 
 **Wave challenges.** Some fights are made of groups of enemies that the game releases in stages, one wave after the next. If the mod recorded those kills, a death partway through would bring every earlier wave back at once instead of in stages.
 
-Since 0.9.2, trials behind a broken bell, such as the "Human-Faced Banyan Trees", are found through the game's own trial state (see "The rules"), so their kills are never recorded. This was checked in play at the third Banyan Tree. Earlier attempts matched the respawn bell ids or the mob domain class (`PBZ_MobDomain_C`); the class turned out to be the wrong signal, as the third tree uses an ordinary `BP_MobDomain_C`. The default `bellExceptions` and `domainExceptions` lists are now empty.
+Since 0.9.2, trials behind a broken bell, such as the "Human-Faced Banyan Trees", are found through the game's own trial state (see "The rules"), so their kills are never recorded. This was checked in play at the third Banyan Tree. Earlier attempts matched the respawn bell ids or the mob domain class (`PBZ_MobDomain_C`); the class turned out to be the wrong signal, as the third tree uses an ordinary `BP_MobDomain_C`. The default `bellExceptions` list is now empty.
+
+Since 0.10.2 the default `domainExceptions` list holds one fight: the six-wave domain near bell `Bell_XM_012` in `PBZ_Ximeng_WP`. There the mod brought every killed wave back at once while the game went on to its next wave, and the game's wave order cannot be reset from a script.
 
 Wave fights that are not broken bell trials may still misbehave, and the whole game has not been played through yet. Three lists can fix a fight that misbehaves:
-- `domainExceptions`: enemies in a matching mob domain are never recorded.
+- `domainExceptions`: enemies in a listed mob domain are never recorded.
 - `bellExceptions`: if the bell you respawn at is on this list, nothing comes back on that death.
 - `enemyExceptions`: spawners on this list are never recorded, so they never come back.
 
@@ -77,7 +79,7 @@ Both files are re-read about every 2 seconds. With neither file, the defaults be
 | `newBellMessage` | `true` | At a rest at a new bell, shows "New bell reached. N enemies will stay dead." in the game's one-line tip ("No pending kills to keep." when there were none). If the game cannot show it, the log says `on-screen message failed` once. |
 | `bellExceptions` | the list `bellExceptionIds` in `Settings.js` | Bell ids. A death that respawns you at one of these brings nothing back and makes pending kills permanent. An id is the game's BellID (logged as `respawn bell <id>`), the bell's actor name, or `<level>\|<actor name>`. Case does not matter. The whole id must match unless `useBellExceptionPartialId` is on. Writing your own list replaces the default one. |
 | `enemyExceptions` | empty (the list `enemyExceptionIds` in `Settings.js`) | Spawner ids (the name printed after `kill:` in the log). These enemies are never recorded as kills. Writing your own list replaces the default one. |
-| `domainExceptions` | empty | Parts of mob domain names. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry matches anywhere in the domain's actor name, ignoring case, so a class name covers every domain of that kind. Enemies in a matching domain are never recorded as kills. The built-in list is `domainExceptionIds` in `Settings.js`. Writing your own list replaces the default one. |
+| `domainExceptions` | the list `domainExceptionIds` in `Settings.js` (one wave fight in `PBZ_Ximeng_WP`) | Mob domain ids. A mob domain is the game's area that groups enemies into one fight; a spawner names the domain it belongs to. An entry is the domain's whole actor name (printed after `kill: ... in domain` in the log), or `<level>\|<actor name>` to match on that level only. Case does not matter; part of a name matches nothing. Enemies in a matching domain are never recorded as kills. Writing your own list replaces the default one. |
 
 A value that cannot be used falls back to the menu's value or the default and is logged once. A number in `EarnedProgression.txt` outside the row's range is clamped to it. Entries in the three lists are trimmed, blanks are dropped and repeats are ignored.
 
@@ -90,7 +92,7 @@ Look in `EarnedProgression.log` in `~mods`. Mods Menu's own line for the mod is 
 
 | Check | What you should see |
 |---|---|
-| The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.1: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
+| The mod loads | `loaded EarnedProgression` in Mods Menu's log, and `started 0.10.2: bellSafeRadius 1000, respawnDust 25` in `EarnedProgression.log` |
 | The menu section | `menu: registered with Mods Menu`, and an Earned Progression section on the Mods Menu tab |
 | An older JSON on the first start | `settings: moved respawnDust, bellSafeRadius, newBellMessage, debugLog from EarnedProgression.json to EarnedProgression.txt (Mods Menu now changes them)` (only the keys the JSON had) |
 | A level is ready | `ready on <level>: N pending, M known bells, cycle C` (`cycle unknown` if the game would not say) |

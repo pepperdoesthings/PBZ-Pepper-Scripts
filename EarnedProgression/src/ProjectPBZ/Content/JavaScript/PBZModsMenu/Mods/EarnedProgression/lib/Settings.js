@@ -30,10 +30,11 @@ const enemyExceptionIds = [
 ];
 
 // Mob domains (the game's areas that group enemies into fights) whose kills are never recorded. An
-// entry matches any part of the domain actor's name, ignoring case, so a class name such as
-// "PBZ_MobDomain_C" covers every domain of that kind. The domain is printed after "kill:" in the log.
+// entry is a domain's whole actor name, or "<level>|<actor name>" to match on that level only,
+// ignoring case. The domain is printed after "kill:" in the log.
 const domainExceptionIds = [
-    // "PBZ_MobDomain_C",
+    // PBZ_Ximeng_WP, at bell Bell_XM_012: six groups released one after another (0st_LuanZhanBiaoYan ... 5th_YuDing)
+    "BP_MobDomain_C_UAID_60CF848A91CA9B9E02_1410993111",
 ];
 
 const DEFAULTS = Object.freeze({

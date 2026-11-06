@@ -12,7 +12,7 @@ const { createDustCut, cutFor } = require("./lib/DustCut");
 const Progress = require("./lib/Progress");
 const { createWaveProbe } = require("./lib/WaveProbe");
 
-const VERSION = "0.10.1";
+const VERSION = "0.10.2";
 const KILL_TICK_MS = 500;
 // A bell counts as the one the player respawns at when it is this close (cm) to the respawn point.
 const BELL_MATCH_CM = 1000;
@@ -142,7 +142,8 @@ function startWith(api, modules) {
         if (!ai)
             return [];
         const wanted = new Set(names);
-        return spawners.loaded(ai).filter((s) => wanted.has(s.GetName()) && spawners.inDomainList(s, list));
+        const level = game.levelName(player);
+        return spawners.loaded(ai).filter((s) => wanted.has(s.GetName()) && spawners.inDomainList(s, list, level));
     }
 
     // The loaded spawner with this actor name, or undefined.
@@ -159,7 +160,7 @@ function startWith(api, modules) {
         }
         const spawner = findSpawner(player, kill.k);
         const domain = spawner ? spawners.domainName(spawner) : "";
-        if (spawner && spawners.inDomainList(spawner, settings.get().domainExceptions)) {
+        if (spawner && spawners.inDomainList(spawner, settings.get().domainExceptions, game.levelName(player))) {
             debug("kill: " + kill.k + " is in domain " + domain + " on the domain exception list, not recorded");
             return;
         }
