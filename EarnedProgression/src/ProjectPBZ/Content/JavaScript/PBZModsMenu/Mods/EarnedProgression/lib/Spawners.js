@@ -105,12 +105,22 @@ function createSpawners(deps) {
         }
     }
 
-    // True when any entry of list appears in the spawner's domain name, ignoring case.
-    function inDomainList(spawner, list) {
+    // True when an entry of list is the spawner's whole domain actor name, or "<level>|<actor name>"
+    // for this level, ignoring case. A domain is one actor placed in a level, so its name (with the
+    // UAID the editor gave it) is a fixed id; the level form keeps it from matching on another level.
+    function inDomainList(spawner, list, level) {
         if (!Array.isArray(list) || list.length === 0)
             return false;
         const name = domainName(spawner).toLowerCase();
-        return name.length > 0 && list.some((e) => typeof e === "string" && e.length > 0 && name.includes(e.toLowerCase()));
+        if (name.length === 0)
+            return false;
+        const own = typeof level === "string" && level.length > 0 ? level.toLowerCase() + "|" + name : "";
+        return list.some((e) => {
+            if (typeof e !== "string")
+                return false;
+            const entry = e.trim().toLowerCase();
+            return entry.length > 0 && (entry === name || entry === own);
+        });
     }
 
     // Splits the level's spawners: normal ones, and how many were left out as bosses or boss adds.

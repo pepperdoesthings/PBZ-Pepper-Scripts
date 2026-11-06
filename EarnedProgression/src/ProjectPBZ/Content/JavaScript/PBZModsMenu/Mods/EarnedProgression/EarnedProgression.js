@@ -12,7 +12,7 @@ const { createDustCut, cutFor } = require("./lib/DustCut");
 const Progress = require("./lib/Progress");
 const { createWaveProbe } = require("./lib/WaveProbe");
 
-const VERSION = "0.10.1";
+const VERSION = "0.10.2";
 const KILL_TICK_MS = 500;
 // A bell counts as the one the player respawns at when it is this close (cm) to the respawn point.
 const BELL_MATCH_CM = 1000;
@@ -113,16 +113,26 @@ function startWith(api, modules) {
     }
 
     function load(ctx) {
+        // The New Game Plus cycle: progress from an earlier playthrough means nothing in a new one.
+        const cycle = game.cycleCount(ctx);
+        if (!cycle.ok)
+            api.log("load: could not read the New Game Plus cycle (" + cycle.error + "), keeping the saved progress");
         const read = game.readSection(ctx);
         if (!read.ok) {
             api.log("could not read the saved progress: " + read.error);
-            state = Progress.emptyState();
+            state = Progress.emptyState(cycle.ok ? cycle.value : undefined);
             return;
         }
-        const loaded = Progress.load(read.data);
+        const loaded = Progress.load(read.data, cycle.ok ? cycle.value : undefined);
         if (loaded.problem)
             api.log("saved progress: " + loaded.problem);
         state = loaded.state;
+        // Store the emptied state at once, so the old cycle's progress is not dropped (and logged)
+        // again at every level load until the next kill, death or rest writes the save.
+        if (loaded.cycleReset) {
+            api.log(Progress.cycleResetText(loaded.cycleReset));
+            save(ctx);
+        }
     }
 
     // The loaded spawners with these actor names whose mob domain is on the domain exception list.
@@ -132,7 +142,8 @@ function startWith(api, modules) {
         if (!ai)
             return [];
         const wanted = new Set(names);
-        return spawners.loaded(ai).filter((s) => wanted.has(s.GetName()) && spawners.inDomainList(s, list));
+        const level = game.levelName(player);
+        return spawners.loaded(ai).filter((s) => wanted.has(s.GetName()) && spawners.inDomainList(s, list, level));
     }
 
     // The loaded spawner with this actor name, or undefined.
@@ -149,7 +160,7 @@ function startWith(api, modules) {
         }
         const spawner = findSpawner(player, kill.k);
         const domain = spawner ? spawners.domainName(spawner) : "";
-        if (spawner && spawners.inDomainList(spawner, settings.get().domainExceptions)) {
+        if (spawner && spawners.inDomainList(spawner, settings.get().domainExceptions, game.levelName(player))) {
             debug("kill: " + kill.k + " is in domain " + domain + " on the domain exception list, not recorded");
             return;
         }
@@ -202,7 +213,8 @@ function startWith(api, modules) {
         }, KILL_TICK_MS);
         watch = { timer };
         probe.ready(player);
-        api.log("ready on " + game.levelName(player) + ": " + state.pending.length + " pending, " + state.bells.length + " known bells");
+        api.log("ready on " + game.levelName(player) + ": " + state.pending.length + " pending, " + state.bells.length + " known bells, cycle " +
+            (state.cycle === undefined ? "unknown" : state.cycle));
     }
 
     // The bell the game will respawn the player at. It is read from the game (the same calls its own

@@ -5,12 +5,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 const VERSION = 1;
 
-function emptyState() {
-    return { version: VERSION, pending: [], again: [], bells: [] };
-}
-
 function isNumber(value) {
     return typeof value === "number" && Number.isFinite(value);
+}
+
+// A whole number 0 or more: a New Game Plus cycle as the game counts it (0 = first playthrough).
+function isCycle(value) {
+    return Number.isInteger(value) && value >= 0;
+}
+
+// cycle: the New Game Plus cycle the state belongs to, or left out when it is not known.
+function emptyState(cycle) {
+    if (isCycle(cycle))
+        return { version: VERSION, cycle, pending: [], again: [], bells: [] };
+    return { version: VERSION, pending: [], again: [], bells: [] };
 }
 
 // A kill: k = key of the spawner in the game's save map, l = level name, x/y/z = spawner position,
@@ -28,16 +36,25 @@ function entryOf(e) {
     return entry;
 }
 
-// raw is whatever the save held for this mod. Returns { state, problem }; problem is a sentence
-// when the saved data had to be replaced or trimmed, and missing when all is well.
-function load(raw) {
+// raw is whatever the save held for this mod; cycle is the game's New Game Plus cycle now, or
+// undefined when it could not be read. Returns { state, problem, cycleReset }: problem is a sentence
+// when the saved data had to be replaced or trimmed; cycleReset is { from, to } when the data was
+// made in another cycle and was dropped (a new cycle resets the world, so its kills and bells no
+// longer mean anything). Only a New Game Plus cycle (above 0) drops data: in the first playthrough
+// nothing is dropped. Data saved without a cycle counts as cycle 0. With no known cycle the data is
+// kept with whatever cycle it had.
+function load(raw, cycle) {
+    const known = isCycle(cycle);
     if (!raw || typeof raw !== "object" || Array.isArray(raw) || Object.keys(raw).length === 0)
-        return { state: emptyState() };
+        return { state: emptyState(cycle) };
     if (raw.version !== VERSION)
-        return { state: emptyState(), problem: "saved data has version " + String(raw.version).slice(0, 20) + ", expected " + VERSION + ", starting empty" };
+        return { state: emptyState(cycle), problem: "saved data has version " + String(raw.version).slice(0, 20) + ", expected " + VERSION + ", starting empty" };
     if (!Array.isArray(raw.pending) || !Array.isArray(raw.again) || !Array.isArray(raw.bells))
-        return { state: emptyState(), problem: "saved data is missing a list, starting empty" };
-    const state = emptyState();
+        return { state: emptyState(cycle), problem: "saved data is missing a list, starting empty" };
+    const savedCycle = isCycle(raw.cycle) ? raw.cycle : 0;
+    if (known && cycle > 0 && savedCycle !== cycle)
+        return { state: emptyState(cycle), cycleReset: { from: savedCycle, to: cycle } };
+    const state = emptyState(known ? cycle : (isCycle(raw.cycle) ? raw.cycle : undefined));
     let dropped = 0;
     const seenKills = new Set();
     for (const e of raw.pending) {
@@ -57,6 +74,11 @@ function load(raw) {
         }
     }
     return dropped > 0 ? { state, problem: dropped + " invalid or repeated saved entries dropped" } : { state };
+}
+
+// A drop of saved progress from another cycle, as one log line.
+function cycleResetText(reset) {
+    return "load: saved progress is from cycle " + reset.from + ", now cycle " + reset.to + ", starting empty";
 }
 
 // Adds a kill to pending. Returns false (and changes nothing) for a bad or already pending kill.
@@ -184,6 +206,7 @@ function nearestBell(bells, center, maxDistance) {
 exports.VERSION = VERSION;
 exports.emptyState = emptyState;
 exports.load = load;
+exports.cycleResetText = cycleResetText;
 exports.recordKill = recordKill;
 exports.isAgain = isAgain;
 exports.inSafeZone = inSafeZone;
